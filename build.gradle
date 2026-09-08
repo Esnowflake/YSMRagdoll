@@ -1,0 +1,128 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    // 固定 ForgeGradle 版本，避免以后导入工程时因动态版本解析得到不同构建结果。
+    id 'net.minecraftforge.gradle' version '6.0.54'
+}
+
+jarJar.enable()
+
+group = mod_group_id
+version = mod_version
+
+base {
+    archivesName = 'ysmragdoll'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'ysmragdoll.projectDir', project.projectDir.absolutePath
+            mods {
+                ysmragdoll {
+                    source sourceSets.main
+                }
+            }
+        }
+        client {}
+        server {}
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+// OpenYSM 是本工程解析 YSM 二进制模型所需的编译期依赖。将 JAR 放在工程内部，
+// 可以保证 ZIP 解压后不依赖相邻目录；它不会被整体打入 ysmragdoll 成品。
+def openYsmJar = layout.projectDirectory.file('libs/openysm-2.6.5-forge+mc1.20.1.jar').asFile
+if (!openYsmJar.isFile()) {
+    throw new GradleException("缺少构建依赖: ${openYsmJar}. 请重新解压完整的 ysmragdoll 工程包。")
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // 只在编译期引用 OpenYSM 的公开类型；运行时所需的最小解析类由下方任务提取。
+    compileOnly files(openYsmJar)
+
+    implementation('cz.advel.jbullet:jbullet:20101010-1') {
+        // JBullet 自带的旧 vecmath 会与显式版本重复，统一由下面的 1.5.2 提供。
+        transitive = false
+    }
+    implementation 'javax.vecmath:vecmath:1.5.2'
+    testImplementation 'junit:junit:4.13.2'
+    jarJar(group: 'cz.advel.jbullet', name: 'jbullet', version: '[20101010-1]') {
+        transitive = false
+    }
+    jarJar(group: 'javax.vecmath', name: 'vecmath', version: '[1.5.2]')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+def openYsmRuntimeDir = layout.buildDirectory.dir('generated/openysmRuntime')
+def extractOpenYsmRuntime = tasks.register('extractOpenYsmRuntime', Sync) {
+    // 仅提取解密、Zstd 和二进制模型解析所需的 OpenYSM 类，避免重复分发整个模组。
+    into openYsmRuntimeDir
+    from(zipTree(openYsmJar)) {
+        include 'rip/ysm/algorithms/CityHash*.class'
+        include 'rip/ysm/algorithms/MT19937*.class'
+        include 'rip/ysm/algorithms/ChaCha20Base*.class'
+        include 'rip/ysm/algorithms/XChaCha20*.class'
+        include 'rip/ysm/zstd/**/*.class'
+        include 'rip/ysm/security/YSMByteBuf*.class'
+        include 'com/elfmcys/yesstevemodel/resource/YSMBinaryDeserializer*.class'
+        include 'com/elfmcys/yesstevemodel/resource/pojo/RawYsmModel*.class'
+    }
+}
+sourceSets.main.output.dir(openYsmRuntimeDir, builtBy: extractOpenYsmRuntime)
+
+processResources {
+    from('LICENSE') {
+        into 'META-INF/licenses'
+        rename { 'YSMRAGDOLL-LICENSE.txt' }
+    }
+    // OpenYSM 的 MIT 许可证随最终 JAR 一同保留。
+    from('licenses/OpenYSM-LICENSE.txt') {
+        into 'META-INF/licenses'
+        rename { 'OpenYSM-LICENSE.txt' }
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+                'Specification-Title'    : mod_name,
+                'Specification-Vendor'   : 'ysmragdoll',
+                'Specification-Version'  : '1',
+                'Implementation-Title'   : project.name,
+                'Implementation-Version' : project.jar.archiveVersion,
+                'Implementation-Vendor'  : 'ysmragdoll',
+                'MixinConfigs'           : 'ysmragdoll.mixins.json'
+        ])
+    }
+}
+
+jar.finalizedBy('reobfJar')
+
+tasks.named('build').configure {
+    dependsOn tasks.named('reobfJarJar')
+}

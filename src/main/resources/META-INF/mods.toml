@@ -1,0 +1,35 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="ysmragdoll"
+version="${file.jarVersion}"
+displayName="YSM Ragdoll"
+displayTest="IGNORE_ALL_VERSION"
+authors="openysm-ragdoll"
+description='''基于 OpenYSM 模型数据的客户端布娃娃物理效果。'''
+
+[[mixins]]
+config="ysmragdoll.mixins.json"
+
+[[dependencies.ysmragdoll]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.0,48)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.ysmragdoll]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.ysmragdoll]]
+modId="yes_steve_model"
+mandatory=false
+versionRange="[2.6.5,)"
+ordering="AFTER"
+side="CLIENT"
