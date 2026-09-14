@@ -6,6 +6,7 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -18,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * 只维护布娃娃附近的 Minecraft 方块碰撞体，并按方块状态增量复用。
@@ -33,7 +35,11 @@ final class BlockCollisionCache {
 
     private final ClientPhysicsWorld physicsWorld;
     private final Map<Long, Entry> entries = new HashMap<>();
-    private final Map<Long, BlockState> observedStates = new HashMap<>();
+    private final Set<Long> required = new HashSet<>();
+    private final Set<Long> visited = new HashSet<>();
+    private final List<AABB> newlyFilledBoxes = new ArrayList<>();
+    private final List<AABB> protectedBoxes = new ArrayList<>();
+    private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final List<PlacementProtection> placementProtections = new ArrayList<>();
     private final Vector3f worldOffset = new Vector3f();
 
@@ -43,41 +49,16 @@ final class BlockCollisionCache {
     }
 
     void update(Level level, Iterable<PhysicsRagdoll> ragdolls) {
-        Set<Long> required = new HashSet<>();
-        List<AABB> newlyFilledBoxes = new ArrayList<>();
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        required.clear();
+        visited.clear();
+        newlyFilledBoxes.clear();
+        Predicate<BlockPos> loaded = level == null ? position -> false : level::hasChunkAt;
         for (PhysicsRagdoll ragdoll : ragdolls) {
-            net.minecraft.world.phys.Vec3 center = ragdoll.center();
+            if (!ragdoll.isChunkLoaded()) continue;
+            net.minecraft.world.phys.Vec3 center = ragdoll.center().subtract(
+                    worldOffset.x, worldOffset.y, worldOffset.z);
             BlockPos origin = BlockPos.containing(center);
-            for (int x = -HORIZONTAL_RADIUS; x <= HORIZONTAL_RADIUS; x++) {
-                for (int y = -VERTICAL_RADIUS; y <= VERTICAL_RADIUS; y++) {
-                    for (int z = -HORIZONTAL_RADIUS; z <= HORIZONTAL_RADIUS; z++) {
-                        cursor.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
-                        if (!level.hasChunkAt(cursor)) {
-                            continue;
-                        }
-                        long key = cursor.asLong();
-                        required.add(key);
-                        BlockState state = level.getBlockState(cursor);
-                        BlockState previousState = observedStates.put(key, state);
-                        Entry current = entries.get(key);
-                        if (current == null || !current.state.equals(state)) {
-                            if (current != null) {
-                                remove(current);
-                            }
-                            Entry replacement = create(level, cursor.immutable(), state);
-                            if (replacement != null) {
-                                entries.put(key, replacement);
-                                if (previousState != null && !previousState.equals(state)) {
-                                    collectWorldBoxes(level, cursor, state, newlyFilledBoxes);
-                                }
-                            } else {
-                                entries.remove(key);
-                            }
-                        }
-                    }
-                }
-            }
+            scanRegion(level, origin, loaded);
         }
         entries.entrySet().removeIf(entry -> {
             if (required.contains(entry.getKey())) {
@@ -86,19 +67,55 @@ final class BlockCollisionCache {
             remove(entry.getValue());
             return true;
         });
-        observedStates.keySet().removeIf(key -> !required.contains(key));
         for (AABB box : newlyFilledBoxes) {
             placementProtections.add(new PlacementProtection(box, PLACEMENT_PROTECTION_TICKS));
         }
         if (!placementProtections.isEmpty()) {
-            List<AABB> protectedBoxes = new ArrayList<>(placementProtections.size());
+            protectedBoxes.clear();
             for (PlacementProtection protection : placementProtections) {
                 protectedBoxes.add(protection.box);
             }
             for (PhysicsRagdoll ragdoll : ragdolls) {
-                ragdoll.ejectAboveNewBlocks(protectedBoxes);
+                if (ragdoll.isChunkLoaded()) ragdoll.ejectAboveNewBlocks(protectedBoxes);
             }
             placementProtections.removeIf(PlacementProtection::tickExpired);
+        }
+    }
+
+    /** Shared coverage is queried once per update, before any state/shape lookup. */
+    void scanRegion(BlockGetter level, BlockPos origin, Predicate<BlockPos> loaded) {
+        for (int x = -HORIZONTAL_RADIUS; x <= HORIZONTAL_RADIUS; x++) {
+            for (int y = -VERTICAL_RADIUS; y <= VERTICAL_RADIUS; y++) {
+                for (int z = -HORIZONTAL_RADIUS; z <= HORIZONTAL_RADIUS; z++) {
+                    cursor.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
+                    long key = cursor.asLong();
+                    if (!visited.add(key) || !loaded.test(cursor)) continue;
+                    required.add(key);
+                    refresh(level, cursor);
+                }
+            }
+        }
+    }
+
+    /** Refresh one loaded position, including empty and environment-dependent shapes. */
+    void refresh(BlockGetter level, BlockPos position) {
+        long key = position.asLong();
+        BlockState state = level.getBlockState(position);
+        Entry current = entries.get(key);
+        if (current != null && current.state.equals(state) && !state.getBlock().hasDynamicShape()) return;
+        List<AABB> boxes = state.getCollisionShape(level, position, CollisionContext.empty()).toAabbs();
+        if (current != null && current.boxes.equals(boxes)) {
+            if (!current.state.equals(state)) {
+                entries.put(key, new Entry(state, current.boxes, current.bodies));
+            }
+            return;
+        }
+        if (current != null) remove(current);
+        entries.put(key, create(position, state, boxes));
+        if (current != null) {
+            for (AABB box : boxes) {
+                newlyFilledBoxes.add(box.move(position).move(worldOffset.x, worldOffset.y, worldOffset.z));
+            }
         }
     }
 
@@ -107,23 +124,14 @@ final class BlockCollisionCache {
             remove(entry);
         }
         entries.clear();
-        observedStates.clear();
+        required.clear();
+        visited.clear();
+        newlyFilledBoxes.clear();
+        protectedBoxes.clear();
         placementProtections.clear();
     }
 
-    /** 将新出现的碰撞形状转换到与 JBullet 一致的物理世界坐标。 */
-    private void collectWorldBoxes(Level level, BlockPos position, BlockState state,
-                                   List<AABB> destination) {
-        for (AABB box : state.getCollisionShape(level, position, CollisionContext.empty()).toAabbs()) {
-            destination.add(box.move(position).move(worldOffset.x, worldOffset.y, worldOffset.z));
-        }
-    }
-
-    private Entry create(Level level, BlockPos position, BlockState state) {
-        List<AABB> boxes = state.getCollisionShape(level, position, CollisionContext.empty()).toAabbs();
-        if (boxes.isEmpty()) {
-            return null;
-        }
+    private Entry create(BlockPos position, BlockState state, List<AABB> boxes) {
         List<RigidBody> bodies = new ArrayList<>(boxes.size());
         for (AABB box : boxes) {
             float halfX = (float) Math.max(0.001, box.getXsize() * 0.5);
@@ -144,7 +152,7 @@ final class BlockCollisionCache {
             physicsWorld.addStaticBody(body);
             bodies.add(body);
         }
-        return new Entry(state, bodies);
+        return new Entry(state, List.copyOf(boxes), bodies);
     }
 
     private void remove(Entry entry) {
@@ -171,7 +179,7 @@ final class BlockCollisionCache {
         }
     }
 
-    private record Entry(BlockState state, List<RigidBody> bodies) {
+    private record Entry(BlockState state, List<AABB> boxes, List<RigidBody> bodies) {
     }
 
     private static final class PlacementProtection {
