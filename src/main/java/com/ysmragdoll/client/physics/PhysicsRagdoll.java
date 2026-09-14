@@ -200,6 +200,11 @@ public final class PhysicsRagdoll {
         return new Vec3(transform.origin.x, transform.origin.y, transform.origin.z);
     }
 
+    /** Minecraft world height, independent of the configurable collision/render offsets. */
+    public double worldCenterY() {
+        return center().y - world.currentWorldOffset(new Vector3f()).y;
+    }
+
     /**
      * 根据主要刚体所在区块更新加载状态。区块卸载时不删除刚体，只暂停模拟，
      * 这样重新靠近后可以从原位置和原姿态继续运行。

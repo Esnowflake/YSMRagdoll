@@ -89,10 +89,13 @@ public final class YsmRagdollSettingsScreen extends Screen {
 
         addCategoryButton(Category.GENERAL, panelTop + 48);
         addCategoryButton(Category.ADVANCED, panelTop + 74);
+        addCategoryButton(Category.MANAGEMENT, panelTop + 100);
         if (category == Category.GENERAL) {
             addGeneralControls();
-        } else {
+        } else if (category == Category.ADVANCED) {
             addAdvancedControls();
+        } else {
+            addManagementLabels(ClientRagdollManager.managementEntries());
         }
         addFooterButtons();
         positionContent();
@@ -115,6 +118,37 @@ public final class YsmRagdollSettingsScreen extends Screen {
         maximum = integerField(contentLeft, y, fieldWidth,
                 draft.maximumRagdolls, 2, "screen.ysmragdoll.general.maximum");
         contentHeight = y + 34;
+    }
+
+    private void addManagementLabels(List<ClientRagdollManager.ManagementEntry> entries) {
+        labels.clear();
+        int y = label(Component.translatable("screen.ysmragdoll.management.count", entries.size()),
+                contentLeft, 0, contentWidth);
+        y = label("screen.ysmragdoll.management.hint", contentLeft, y + 4, contentWidth);
+        if (entries.isEmpty()) {
+            y = label("screen.ysmragdoll.management.empty", contentLeft, y + 8, contentWidth);
+        }
+        for (ClientRagdollManager.ManagementEntry entry : entries) {
+            y = label(Component.translatable("screen.ysmragdoll.management.entry", entry.id(),
+                    entry.playerId().substring(0, 8)), contentLeft, y + 8, contentWidth);
+            Component expiry = entry.manualRemoval()
+                    ? Component.translatable("screen.ysmragdoll.management.manual")
+                    : entry.remainingMillis() < 0
+                    ? Component.translatable("screen.ysmragdoll.management.permanent")
+                    : Component.translatable("screen.ysmragdoll.management.countdown",
+                            (entry.remainingMillis() + 999L) / 1000L);
+            y = label(expiry, contentLeft, y, contentWidth);
+        }
+        contentHeight = y + 8;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (category == Category.MANAGEMENT) {
+            addManagementLabels(ClientRagdollManager.managementEntries());
+            positionContent();
+        }
     }
 
     private void addAdvancedControls() {
@@ -156,6 +190,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
                 case STATIC_CREATED -> "static_created";
                 case NO_PLAYER -> "no_player";
                 case DISABLED -> "disabled";
+                case BELOW_VOID -> "below_void";
                 case CAPTURE_FAILED -> "capture_failed";
             };
             status = Component.translatable("screen.ysmragdoll.spawn." + key,
@@ -176,7 +211,11 @@ public final class YsmRagdollSettingsScreen extends Screen {
     }
 
     private int label(String key, int x, int y, int availableWidth) {
-        List<FormattedCharSequence> lines = font.split(Component.translatable(key), availableWidth);
+        return label(Component.translatable(key), x, y, availableWidth);
+    }
+
+    private int label(Component text, int x, int y, int availableWidth) {
+        List<FormattedCharSequence> lines = font.split(text, availableWidth);
         for (FormattedCharSequence line : lines) {
             labels.add(new Label(line, x, y));
             y += font.lineHeight;
@@ -374,7 +413,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
                         "screen.ysmragdoll.general.lifetime");
                 draft.maximumRagdolls = readInteger(maximum, 0, YsmRagdollConfig.RAGDOLL_LIMIT,
                         "screen.ysmragdoll.general.maximum");
-            } else {
+            } else if (category == Category.ADVANCED) {
                 draft.easyPushIndex = readInteger(easyPush, 0, 100,
                         "screen.ysmragdoll.advanced.easy_push");
                 draft.groundFriction = readInteger(groundFriction, 0, 100,
@@ -586,7 +625,8 @@ public final class YsmRagdollSettingsScreen extends Screen {
 
     private enum Category {
         GENERAL(Component.translatable("screen.ysmragdoll.category.general")),
-        ADVANCED(Component.translatable("screen.ysmragdoll.category.advanced"));
+        ADVANCED(Component.translatable("screen.ysmragdoll.category.advanced")),
+        MANAGEMENT(Component.translatable("screen.ysmragdoll.category.management"));
 
         private final Component title;
 

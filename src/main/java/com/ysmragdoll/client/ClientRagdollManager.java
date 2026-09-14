@@ -49,6 +49,7 @@ public final class ClientRagdollManager {
     private static final Deque<PendingExplosion> RECENT_EXPLOSIONS = new ArrayDeque<>();
     private static final long EXPLOSION_REPLAY_WINDOW_MILLIS = 1000L;
     private static ClientPhysicsWorld physicsWorld;
+    private static long nextRagdollId = 1;
 
     private ClientRagdollManager() {
     }
@@ -57,12 +58,27 @@ public final class ClientRagdollManager {
         return RAGDOLLS.size();
     }
 
+    /** Read-only, client-thread view of the same deadlines used for removal. */
+    public static List<ManagementEntry> managementEntries() {
+        long now = System.currentTimeMillis();
+        int lifetime = YsmRagdollConfig.LIFETIME_SECONDS.get();
+        boolean manual = YsmRagdollConfig.MANUAL_REMOVAL.get();
+        List<ManagementEntry> result = new ArrayList<>(RAGDOLLS.size());
+        for (StaticRagdoll ragdoll : RAGDOLLS) {
+            result.add(new ManagementEntry(ragdoll.id, ragdoll.snapshot.playerId().toString(),
+                    RagdollLifetime.remainingMillis(ragdoll.createdAtMillis, now, lifetime, manual), manual));
+        }
+        return List.copyOf(result);
+    }
+
+    public record ManagementEntry(long id, String playerId, long remainingMillis, boolean manualRemoval) {}
+
     public static int physicsRagdollCount() {
         return ACTIVE_PHYSICS.size();
     }
 
     public enum TestSpawnResult {
-        CREATED, STATIC_CREATED, NO_PLAYER, DISABLED, CAPTURE_FAILED
+        CREATED, STATIC_CREATED, NO_PLAYER, DISABLED, BELOW_VOID, CAPTURE_FAILED
     }
 
     /** One GUI click creates one local snapshot; never send a death packet or deduplicate it. */
@@ -74,6 +90,9 @@ public final class ClientRagdollManager {
         }
         if (YsmRagdollConfig.MAX_RAGDOLLS.get() <= 0) {
             return TestSpawnResult.DISABLED;
+        }
+        if (RagdollLifetime.belowVoid(player.getY())) {
+            return TestSpawnResult.BELOW_VOID;
         }
         Vec3 velocity = player.getDeltaMovement();
         PlayerDeathSnapshot snapshot = new PlayerDeathSnapshot(player.getId(), player.getUUID(),
@@ -136,7 +155,8 @@ public final class ClientRagdollManager {
 
     public static void onPlayerDeath(PlayerDeathSnapshot snapshot) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || YsmRagdollConfig.MAX_RAGDOLLS.get() == 0) {
+        if (minecraft.level == null || YsmRagdollConfig.MAX_RAGDOLLS.get() == 0
+                || RagdollLifetime.belowVoid(snapshot.y())) {
             return;
         }
         Entity entity = minecraft.level.getEntity(snapshot.entityId());
@@ -177,18 +197,15 @@ public final class ClientRagdollManager {
         while (RAGDOLLS.size() > limit) {
             removeOldest("数量上限降低");
         }
-        if (!YsmRagdollConfig.MANUAL_REMOVAL.get()) {
-            int lifetime = YsmRagdollConfig.LIFETIME_SECONDS.get();
-            if (lifetime <= 10000) {
-                long now = System.currentTimeMillis();
-                Iterator<StaticRagdoll> iterator = RAGDOLLS.iterator();
-                while (iterator.hasNext()) {
-                    StaticRagdoll ragdoll = iterator.next();
-                    if (now - ragdoll.createdAtMillis >= lifetime * 1000L) {
-                        iterator.remove();
-                        dispose(ragdoll);
-                    }
-                }
+        int lifetime = YsmRagdollConfig.LIFETIME_SECONDS.get();
+        boolean manual = YsmRagdollConfig.MANUAL_REMOVAL.get();
+        Iterator<StaticRagdoll> iterator = RAGDOLLS.iterator();
+        while (iterator.hasNext()) {
+            StaticRagdoll ragdoll = iterator.next();
+            if (isBelowVoid(ragdoll) || RagdollLifetime.remainingMillis(
+                    ragdoll.createdAtMillis, currentTimeMillis, lifetime, manual) == 0) {
+                iterator.remove();
+                dispose(ragdoll);
             }
         }
 
@@ -257,7 +274,7 @@ public final class ClientRagdollManager {
     }
 
     private static StaticRagdoll promote(PendingRagdoll pending) {
-        if (YsmRagdollConfig.MAX_RAGDOLLS.get() <= 0) {
+        if (YsmRagdollConfig.MAX_RAGDOLLS.get() <= 0 || RagdollLifetime.belowVoid(pending.snapshot.y())) {
             return null;
         }
         trimForNewRagdoll();
@@ -341,6 +358,16 @@ public final class ClientRagdollManager {
                 physicsWorld.simulateFrame(ACTIVE_PHYSICS);
             }
         }
+        // Physics advances during rendering. Remove immediately after stepping, before drawing.
+        Iterator<StaticRagdoll> fallen = RAGDOLLS.iterator();
+        while (fallen.hasNext()) {
+            StaticRagdoll ragdoll = fallen.next();
+            if (isBelowVoid(ragdoll)) {
+                fallen.remove();
+                dispose(ragdoll);
+            }
+        }
+        if (RAGDOLLS.isEmpty()) return;
         var buffers = minecraft.renderBuffers().bufferSource();
         VertexConsumer debugLines = YsmRagdollConfig.SHOW_COLLISION_BOXES.get()
                 ? buffers.getBuffer(RenderType.lines()) : null;
@@ -433,6 +460,11 @@ public final class ClientRagdollManager {
         releaseWorldIfUnused();
     }
 
+    private static boolean isBelowVoid(StaticRagdoll ragdoll) {
+        return RagdollLifetime.belowVoid(ragdoll.physics == null
+                ? ragdoll.snapshot.y() : ragdoll.physics.worldCenterY());
+    }
+
     private static void releaseWorldIfUnused() {
         if (physicsWorld != null && ACTIVE_PHYSICS.isEmpty()) {
             physicsWorld.clear();
@@ -441,6 +473,7 @@ public final class ClientRagdollManager {
     }
 
     private static final class StaticRagdoll {
+        private final long id = nextRagdollId++;
         private final PlayerDeathSnapshot snapshot;
         private final OpenYsmModelAdapter.CapturedModel model;
         private final long createdAtMillis;

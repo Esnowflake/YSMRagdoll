@@ -34,9 +34,9 @@ public class SettingsScreenLayoutTest {
             for (String language : List.of("zh_cn", "en_us")) {
                 loadLanguage(language);
                 for (int[] size : new int[][]{{320, 240}, {426, 240}, {640, 360}, {854, 480}}) {
-                    for (boolean advanced : new boolean[]{false, true}) {
-                        YsmRagdollSettingsScreen screen = screen(size[0], size[1], advanced);
-                        String context = language + " " + size[0] + "x" + size[1] + " " + advanced;
+                    for (int category = 0; category < 3; category++) {
+                        YsmRagdollSettingsScreen screen = screen(size[0], size[1], category);
+                        String context = language + " " + size[0] + "x" + size[1] + " " + category;
                         List<Rectangle> textBounds = new ArrayList<>();
                         Font font = (Font) field(Screen.class, "font").get(screen);
                         for (Object label : (List<?>) field(screen.getClass(), "labels").get(screen)) {
@@ -133,7 +133,7 @@ public class SettingsScreenLayoutTest {
                     YsmRagdollSettingsScreen screen = screen(size[0], size[1], true);
                     EditBox input = (EditBox) field(screen.getClass(), "easyPush").get(screen);
                     input.setValue("87");
-                    for (String outcome : List.of("created", "static_created", "capture_failed", "disabled")) {
+                    for (String outcome : List.of("created", "static_created", "capture_failed", "disabled", "below_void")) {
                         Component status = Component.translatable("screen.ysmragdoll.spawn." + outcome, 2, 1);
                         field(screen.getClass(), "status").set(screen, status);
                         invoke(screen, "positionContent");
@@ -159,6 +159,10 @@ public class SettingsScreenLayoutTest {
     }
 
     private static YsmRagdollSettingsScreen screen(int width, int height, boolean advanced) throws Exception {
+        return screen(width, height, advanced ? 1 : 0);
+    }
+
+    private static YsmRagdollSettingsScreen screen(int width, int height, int categoryIndex) throws Exception {
         CommentedConfig config = CommentedConfig.inMemory();
         YsmRagdollConfig.SPEC.correct(config);
         YsmRagdollConfig.SPEC.setConfig(config);
@@ -166,12 +170,46 @@ public class SettingsScreenLayoutTest {
         screen.width = width;
         screen.height = height;
         field(Screen.class, "font").set(screen, new LayoutFont());
-        if (advanced) {
-            Field category = field(screen.getClass(), "category");
-            category.set(screen, category.getType().getEnumConstants()[1]);
-        }
+        Field category = field(screen.getClass(), "category");
+        category.set(screen, category.getType().getEnumConstants()[categoryIndex]);
         screen.init();
         return screen;
+    }
+
+    @Test
+    public void managementShowsExpiryModesAndCanScrollAfterTheListShrinks() throws Exception {
+        Language original = Language.getInstance();
+        try {
+            loadLanguage("zh_cn");
+            YsmRagdollSettingsScreen screen = screen(320, 240, 2);
+            Method update = screen.getClass().getDeclaredMethod("addManagementLabels", List.class);
+            update.setAccessible(true);
+            String uuid = "12345678-1234-1234-1234-123456789abc";
+            update.invoke(screen, List.of(
+                    new ClientRagdollManager.ManagementEntry(1, uuid, 1001, false),
+                    new ClientRagdollManager.ManagementEntry(2, uuid, -1, true),
+                    new ClientRagdollManager.ManagementEntry(3, uuid, -1, false)));
+            StringBuilder text = new StringBuilder();
+            for (Object label : (List<?>) field(screen.getClass(), "labels").get(screen)) {
+                ((FormattedCharSequence) invoke(label, "text")).accept((index, style, codepoint) -> {
+                    text.appendCodePoint(codepoint);
+                    return true;
+                });
+            }
+            assertTrue(text.toString().contains("当前世界布娃娃：3 具"));
+            assertTrue(text.toString().contains("消失倒计时：2 秒"));
+            assertTrue(text.toString().contains("已开启手动清除"));
+            assertTrue(text.toString().contains("已设置永久存在"));
+            // Applying settings on this category must not try to read absent advanced fields.
+            assertEquals(true, invoke(screen, "captureVisibleValues"));
+            assertTrue((int) invoke(screen, "maximumScroll") > 0);
+            field(screen.getClass(), "scroll").set(screen, 10000);
+            update.invoke(screen, List.of());
+            invoke(screen, "positionContent");
+            assertEquals(0, field(screen.getClass(), "scroll").get(screen));
+        } finally {
+            Language.inject(original);
+        }
     }
 
     private static void loadLanguage(String name) throws Exception {

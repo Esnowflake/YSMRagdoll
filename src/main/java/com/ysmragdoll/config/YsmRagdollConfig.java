@@ -35,8 +35,8 @@ public final class YsmRagdollConfig {
                         "永久存在时仍受数量上限和手动清除规则影响。")
                 .defineInRange("lifetimeSeconds", 20, 0, Integer.MAX_VALUE);
         MANUAL_REMOVAL = builder.comment(
-                        "开启后只能空手右键布娃娃进行清除，并完全忽略存在时间。",
-                        "数量上限仍然具有最高优先级。")
+                        "开启后可空手右键布娃娃进行清除，并完全忽略存在时间。",
+                        "数量上限及低于 Y=-64 的虚空清理仍然生效。")
                 .define("manualRemoval", false);
         MAX_RAGDOLLS = builder.comment(
                         "客户端同时保留的布娃娃数量，范围 0 到 10，默认 2。",
