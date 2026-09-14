@@ -1,0 +1,16 @@
+.gradle/
+build/
+run/
+out/
+*.log
+*.iml
+ysmragdolllog/
+ysm-ragdoll-logs/
+.idea/workspace.xml
+.idea/shelf/
+.idea/httpRequests/
+.idea/
+logs/
+Ragdoll/
+114514.txt
+libs/
