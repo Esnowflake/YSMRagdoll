@@ -81,6 +81,24 @@ public class GrabJointGuardTest {
             }
             System.out.println("Joint guard wall=" + wall + " maximum gap=" + maxGap);
             assertTrue("No visible separation: " + maxGap, maxGap < 0.02F);
+            if (!wall) {
+                float trackingError = 0;
+                for (int frame = 0; frame < 720; frame++) {
+                    float angle = frame * 2F / 120;
+                    Vector3f target = new Vector3f(4 * (float) Math.cos(angle), 8, 4 * (float) Math.sin(angle));
+                    grab.moveTo(target);
+                    grab.beforeStep();
+                    world.stepSimulation(1F / 120, 0, 1F / 120);
+                    grab.afterStep();
+                    Vector3f error = grab.anchor();
+                    error.sub(target);
+                    if (frame > 120) trackingError = Math.max(trackingError, error.length());
+                    assertTrue(guard.maximumError() < 0.02F);
+                }
+                System.out.println("Tracking at 8 blocks/second: " + trackingError);
+                assertTrue("Must track a moving crosshair instead of trailing meters behind: " + trackingError,
+                        trackingError < 0.25F);
+            }
             Vector3f restingTarget = new Vector3f(-4, 7, 0);
             grab.moveTo(restingTarget);
             for (int i = 0; i < 720; i++) {
@@ -98,6 +116,25 @@ public class GrabJointGuardTest {
             assertTrue(bodies.get(0).getWorldTransform(new Transform()).origin.y < height);
             assertEquals(20, world.getSolverInfo().numIterations);
         }
+    }
+
+    @Test
+    public void wholeAssemblyStopsWhenOnlyLowerLimbHitsWall() {
+        var world = world();
+        RigidBody upper = body(world, 1, pose(0, 3, 0), new Vector3f(0.1F, 0.1F, 0.1F));
+        RigidBody lower = body(world, 1, pose(0, 1, 0), new Vector3f(0.1F, 0.1F, 0.1F));
+        body(world, 0, pose(1, 1, 0), new Vector3f(0.2F, 0.3F, 1));
+        var joint = new Generic6DofConstraint(upper, lower, pose(0, -1, 0), pose(0, 1, 0), true);
+        var guard = new GrabJointGuard(world, List.of(joint));
+        for (int i = 0; i < 10; i++) guard.follow(upper, new Vector3f(2, 0, 0));
+        float lowerX = lower.getWorldTransform(new Transform()).origin.x;
+        assertTrue(lowerX > 0.5F && lowerX <= 0.701F);
+        assertEquals(lowerX, upper.getWorldTransform(new Transform()).origin.x, 0.0001F);
+        assertEquals(0, guard.maximumError(), 0.0001F);
+        assertEquals(0, upper.getLinearVelocity(new Vector3f()).length(), 0);
+        var unloaded = new GrabJointGuard(world, List.of(joint), (bodies, movement) -> false);
+        unloaded.follow(upper, new Vector3f(0, 5, 0));
+        assertEquals(3, upper.getWorldTransform(new Transform()).origin.y, 0);
     }
 
     @Test

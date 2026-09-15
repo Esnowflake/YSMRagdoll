@@ -1,6 +1,11 @@
 package com.ysmragdoll.client.physics;
 
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
+import com.bulletphysics.dynamics.RigidBody;
+import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
+import com.bulletphysics.collision.shapes.BoxShape;
+import com.bulletphysics.linearmath.DefaultMotionState;
+import com.bulletphysics.linearmath.Transform;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.ysmragdoll.config.YsmRagdollConfig;
 import net.minecraft.SharedConstants;
@@ -40,6 +45,34 @@ public class BlockCollisionCacheTest {
         YsmRagdollConfig.SPEC.setConfig(config);
         physics = new ClientPhysicsWorld();
         cache = new BlockCollisionCache(physics, new Vector3f());
+    }
+
+    @Test
+    public void grabSweepRefreshesBeyondTickCoverageAndRejectsUnloadedPositions() throws Exception {
+        TestBlocks level = new TestBlocks(new CountingBlock(false, Shapes.block()).defaultBlockState());
+        Transform pose = new Transform();
+        pose.setIdentity();
+        pose.origin.set(20.5F, 4.5F, 20.5F);
+        var body = new RigidBody(new RigidBodyConstructionInfo(1, new DefaultMotionState(pose),
+                new BoxShape(new Vector3f(0.1F, 0.1F, 0.1F)), new Vector3f(1, 1, 1)));
+        assertTrue(cache.prepareSweep(level, pos -> true, List.of(body), new Vector3f(0.6F, 0, 0)));
+        assertEquals(2, bodies());
+        int queries = level.queries;
+        assertFalse(cache.prepareSweep(level, pos -> false, List.of(body), new Vector3f(0.6F, 0, 0)));
+        assertEquals(queries, level.queries);
+        cache.clear();
+    }
+
+    @Test
+    public void placementDetectedBetweenTicksKeepsItsProtection() throws Exception {
+        TestBlocks level = new TestBlocks(new CountingBlock(false, Shapes.empty()).defaultBlockState());
+        cache.refresh(level, BlockPos.ZERO);
+        level.state = new CountingBlock(false, Shapes.block()).defaultBlockState();
+        cache.refresh(level, BlockPos.ZERO);
+        cache.update(null, List.of());
+        assertEquals(1, ((List<?>) get(cache, "placementProtections")).size());
+        assertTrue(((List<?>) get(cache, "newlyFilledBoxes")).isEmpty());
+        cache.clear();
     }
 
     @Test

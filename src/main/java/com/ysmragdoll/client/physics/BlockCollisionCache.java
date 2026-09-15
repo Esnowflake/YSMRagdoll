@@ -51,7 +51,6 @@ final class BlockCollisionCache {
     void update(Level level, Iterable<PhysicsRagdoll> ragdolls) {
         required.clear();
         visited.clear();
-        newlyFilledBoxes.clear();
         Predicate<BlockPos> loaded = level == null ? position -> false : level::hasChunkAt;
         for (PhysicsRagdoll ragdoll : ragdolls) {
             if (!ragdoll.isChunkLoaded()) continue;
@@ -70,6 +69,7 @@ final class BlockCollisionCache {
         for (AABB box : newlyFilledBoxes) {
             placementProtections.add(new PlacementProtection(box, PLACEMENT_PROTECTION_TICKS));
         }
+        newlyFilledBoxes.clear();
         if (!placementProtections.isEmpty()) {
             protectedBoxes.clear();
             for (PlacementProtection protection : placementProtections) {
@@ -80,6 +80,29 @@ final class BlockCollisionCache {
             }
             placementProtections.removeIf(PlacementProtection::tickExpired);
         }
+    }
+
+    /** Refresh the entire swept volume before fast grabbing, even outside the last tick's coverage. */
+    boolean prepareSweep(BlockGetter level, Predicate<BlockPos> loaded, List<RigidBody> bodies, Vector3f movement) {
+        if (level == null) return false;
+        Set<Long> checked = new HashSet<>();
+        Vector3f min = new Vector3f();
+        Vector3f max = new Vector3f();
+        for (RigidBody body : bodies) {
+            body.getAabb(min, max);
+            BlockPos start = BlockPos.containing(min.x - worldOffset.x + Math.min(0, movement.x) - 0.05,
+                    min.y - worldOffset.y + Math.min(0, movement.y) - 0.05,
+                    min.z - worldOffset.z + Math.min(0, movement.z) - 0.05);
+            BlockPos end = BlockPos.containing(max.x - worldOffset.x + Math.max(0, movement.x) + 0.05,
+                    max.y - worldOffset.y + Math.max(0, movement.y) + 0.05,
+                    max.z - worldOffset.z + Math.max(0, movement.z) + 0.05);
+            for (BlockPos pos : BlockPos.betweenClosed(start, end)) {
+                if (!checked.add(pos.asLong())) continue;
+                if (!loaded.test(pos)) return false;
+                refresh(level, pos);
+            }
+        }
+        return true;
     }
 
     /** Shared coverage is queried once per update, before any state/shape lookup. */

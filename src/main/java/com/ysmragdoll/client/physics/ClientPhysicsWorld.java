@@ -44,6 +44,8 @@ public final class ClientPhysicsWorld {
     private final DiscreteDynamicsWorld world;
     private final CollisionDispatcher dispatcher;
     private final BlockCollisionCache blockCollisions;
+    private final FluidBuoyancy fluids = new FluidBuoyancy();
+    private Level currentLevel;
     private final Map<RigidBody, PhysicsRagdoll> bodyOwners = new IdentityHashMap<>();
     private final Vector3f appliedWorldOffset;
     private int tickCounter;
@@ -70,7 +72,9 @@ public final class ClientPhysicsWorld {
     }
 
     public void tick(Level level, Player localPlayer, Iterable<PhysicsRagdoll> ragdolls) {
+        currentLevel = level;
         updateWorldOffset(ragdolls);
+        fluids.beginTick(level, level == null ? position -> false : level::hasChunkAt, appliedWorldOffset);
         for (PhysicsRagdoll ragdoll : ragdolls) {
             ragdoll.updateChunkLoaded(level);
         }
@@ -104,7 +108,10 @@ public final class ClientPhysicsWorld {
             // Player contact is resolved once in tick(), where the player's
             // actual movement is known. Repeating group translation here for
             // every render catch-up step can amplify one tick into a launch.
-            for (PhysicsRagdoll ragdoll : ragdolls) ragdoll.beforeGrabStep();
+            for (PhysicsRagdoll ragdoll : ragdolls) {
+                ragdoll.beforeGrabStep();
+                ragdoll.applyFluidForces(fluids, FIXED_STEP_SECONDS);
+            }
             world.stepSimulation(FIXED_STEP_SECONDS, 0, FIXED_STEP_SECONDS);
             resolveBlockPenetration();
             for (PhysicsRagdoll ragdoll : ragdolls) {
@@ -248,7 +255,9 @@ public final class ClientPhysicsWorld {
     }
 
     GrabJointGuard grabJointGuard(List<TypedConstraint> constraints) {
-        return new GrabJointGuard(world, constraints);
+        return new GrabJointGuard(world, constraints,
+                (bodies, movement) -> currentLevel != null
+                        && blockCollisions.prepareSweep(currentLevel, currentLevel::hasChunkAt, bodies, movement));
     }
 
     void addConstraint(TypedConstraint constraint) {
@@ -260,6 +269,8 @@ public final class ClientPhysicsWorld {
     }
 
     public void clear() {
+        currentLevel = null;
+        fluids.clear();
         blockCollisions.clear();
         bodyOwners.clear();
         collisionPlayer = null;

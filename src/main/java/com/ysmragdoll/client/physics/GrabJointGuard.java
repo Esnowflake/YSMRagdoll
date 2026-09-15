@@ -9,19 +9,54 @@ import com.bulletphysics.dynamics.constraintsolver.TypedConstraint;
 import com.bulletphysics.linearmath.Transform;
 import javax.vecmath.Vector3f;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.function.BiPredicate;
 
 /** Grab-only positional correction of joint anchors; never changes joint angles or body rotations. */
 final class GrabJointGuard {
     private static final float TOLERANCE = 0.001F;
     private static final int MAX_PASSES = 32;
     private static final float MAX_CORRECTION = 0.04F;
+    // Fixed 120 Hz substeps: catch up quickly without injecting large velocities into a light limb.
+    private static final float FOLLOW_FRACTION = 0.65F;
+    private static final float MAX_FOLLOW_STEP = 0.6F;
     private final DiscreteDynamicsWorld world;
     private final List<Generic6DofConstraint> joints;
+    private final List<RigidBody> bodies;
+    private final BiPredicate<List<RigidBody>, Vector3f> prepareSweep;
 
     GrabJointGuard(DiscreteDynamicsWorld world, List<TypedConstraint> constraints) {
+        this(world, constraints, (bodies, movement) -> true);
+    }
+
+    GrabJointGuard(DiscreteDynamicsWorld world, List<TypedConstraint> constraints,
+                   BiPredicate<List<RigidBody>, Vector3f> prepareSweep) {
         this.world = world;
+        this.prepareSweep = prepareSweep;
         joints = constraints.stream().filter(Generic6DofConstraint.class::isInstance)
                 .map(Generic6DofConstraint.class::cast).toList();
+        var connected = new LinkedHashSet<RigidBody>();
+        for (Generic6DofConstraint joint : joints) {
+            connected.add(joint.getRigidBodyA());
+            connected.add(joint.getRigidBodyB());
+        }
+        bodies = List.copyOf(connected);
+    }
+
+    /** Common position correction preserves all joint distances and adds no throwing velocity. */
+    void follow(RigidBody grabbed, Vector3f error) {
+        Vector3f movement = new Vector3f(error);
+        movement.scale(FOLLOW_FRACTION);
+        float distance = movement.length();
+        if (distance < 0.0001F) return;
+        if (distance > MAX_FOLLOW_STEP) movement.scale(MAX_FOLLOW_STEP / distance);
+        List<RigidBody> assembly = bodies.isEmpty() ? List.of(grabbed) : bodies;
+        if (!prepareSweep.test(assembly, movement)) return;
+        float fraction = 1;
+        for (RigidBody part : assembly) fraction = Math.min(fraction, safeFraction(part, movement));
+        if (fraction <= 0) return;
+        movement.scale(fraction);
+        for (RigidBody part : assembly) translate(part, movement);
     }
 
     float maximumError() {
@@ -92,7 +127,14 @@ final class GrabJointGuard {
 
     private boolean translateSafely(RigidBody body, Vector3f movement) {
         if (movement.lengthSquared() < 1.0E-10F || body.getInvMass() == 0) return false;
-        if (!(body.getCollisionShape() instanceof ConvexShape shape)) return false;
+        movement.scale(safeFraction(body, movement));
+        if (movement.lengthSquared() < 1.0E-10F) return false;
+        translate(body, movement);
+        return true;
+    }
+
+    private float safeFraction(RigidBody body, Vector3f movement) {
+        if (body.getInvMass() == 0 || !(body.getCollisionShape() instanceof ConvexShape shape)) return 0;
         Transform from = body.getWorldTransform(new Transform());
         Transform to = new Transform(from);
         to.origin.add(movement);
@@ -108,17 +150,16 @@ final class GrabJointGuard {
         hit.collisionFilterGroup = 2;
         hit.collisionFilterMask = 1;
         world.convexSweepTest(shape, from, to, hit);
-        if (hit.hasHit()) {
-            float fraction = Math.max(0, hit.closestHitFraction - TOLERANCE / movement.length());
-            movement.scale(fraction);
-            if (movement.lengthSquared() < 1.0E-10F) return false;
-            to.origin.add(from.origin, movement);
-        }
+        return hit.hasHit() ? Math.max(0, hit.closestHitFraction - TOLERANCE / movement.length()) : 1;
+    }
+
+    private void translate(RigidBody body, Vector3f movement) {
+        Transform to = body.getWorldTransform(new Transform());
+        to.origin.add(movement);
         body.setWorldTransform(to);
         body.setInterpolationWorldTransform(to);
         if (body.getMotionState() != null) body.getMotionState().setWorldTransform(to);
         world.updateSingleAabb(body);
         body.activate(true);
-        return true;
     }
 }

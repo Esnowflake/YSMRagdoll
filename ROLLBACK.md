@@ -1,6 +1,26 @@
 # 构建与回退
 
-## 当前修订：0.5.25 抓取关节防拉伸
+## 当前修订：0.5.25 快速抓取与液体浮力
+
+开发分支：`fix/responsive-grab-buoyancy`；版本号保持 `0.5.25`。
+本轮开始前的提交为 `75024b6`，标签为 `baseline-before-responsive-grab-buoyancy-0.5.25`。
+
+源码回退：确认工作区干净后执行 `git switch fix/grab-joint-guard`。
+恢复本轮修订：`git switch fix/responsive-grab-buoyancy`。有未提交修改时先保存。
+
+游戏回退：退出游戏，将 mods 中的同名 JAR 换成以下备份：
+
+`E:\YSM Ragdoll\backups\ysmragdoll-before-responsive-grab-buoyancy\ysmragdoll-0.5.25-all.jar`
+
+Git 历史备份：`E:\YSM Ragdoll\YSMRagdoll-before-responsive-grab-buoyancy.bundle`。
+新版安装包仍是 `build/libs/ysmragdoll-0.5.25-all.jar`，不能同时安装新旧包。
+本轮提交只保存在本地，尚未推送到 GitHub。
+
+新增验证覆盖每秒 8 格的连续目标跟随、下肢受阻时整具停止、移动路径碰撞补齐、
+水和岩浆中的上浮/液面稳定、液体移除后下落、液体高度、缓存刷新、未加载区块与物理偏移。
+自动测试使用简化刚体，仍需游戏内验证真实 YSM 模型在墙角、水池、岩浆池和浅流体中的效果。
+
+## 上一轮修订：0.5.25 抓取关节防拉伸
 
 开发分支：`fix/grab-joint-guard`；版本号保持 `0.5.25`。
 本轮开始前的提交为 `2a3ad8d`，标签为 `baseline-before-joint-guard-0.5.25`。

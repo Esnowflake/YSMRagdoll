@@ -77,6 +77,7 @@ public final class PhysicsRagdoll {
     private final PlayerCollisionResponse playerCollision;
     private boolean disposed;
     private PhysicsGrab grab;
+    private boolean inFluid;
 
     PhysicsGrab grab(RigidBody body, Vector3f hit) {
         if (disposed || !chunkLoaded) return null;
@@ -93,6 +94,14 @@ public final class PhysicsRagdoll {
     void beforeGrabStep() { if (grab != null) grab.beforeStep(); }
 
     void afterGrabStep() { if (grab != null) grab.afterStep(); }
+
+    void applyFluidForces(FluidBuoyancy fluids, float seconds) {
+        inFluid = false;
+        if (disposed || !chunkLoaded) return;
+        boolean grabbed = isGrabbed();
+        for (BodyPart part : bodies.values()) inFluid |= fluids.apply(part.body, seconds, grabbed);
+        if (inFluid) pushLiftSuppressionSteps = 0;
+    }
 
     public static PhysicsRagdoll create(ClientPhysicsWorld world, PlayerDeathSnapshot snapshot,
                                         OpenYsmModelAdapter.PhysicsModelView model) {
@@ -351,7 +360,7 @@ public final class PhysicsRagdoll {
      * 这里只调整根刚体角速度，不主动施加倾倒力；四肢仍完全交给关节和碰撞求解。
      */
     void biasTowardSideRoll(float seconds) {
-        if (isGrabbed()) return;
+        if (isGrabbed() || inFluid) return;
         BodyPart body = bodies.get(RagdollDefinition.Role.BODY);
         if (body == null) {
             return;

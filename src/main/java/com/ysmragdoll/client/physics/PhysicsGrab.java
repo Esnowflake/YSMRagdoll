@@ -74,6 +74,13 @@ public final class PhysicsGrab implements AutoCloseable {
         Vector3f delta = new Vector3f(requestedPoint);
         delta.add(offset.get());
         delta.sub(current);
+        if (error < STRAIN_LIMIT) jointGuard.follow(body, delta);
+        current.set(localAnchor);
+        body.getWorldTransform(transform);
+        transform.transform(current);
+        delta.set(requestedPoint);
+        delta.add(offset.get());
+        delta.sub(current);
         // Bound just the driving error, without overwriting the assembly's velocities.
         float allowance = Math.max(0.005F, MAX_DRIVE_ERROR * (1 - error / STRAIN_LIMIT));
         float length = delta.length();
