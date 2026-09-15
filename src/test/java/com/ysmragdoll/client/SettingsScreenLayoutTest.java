@@ -34,7 +34,7 @@ public class SettingsScreenLayoutTest {
             for (String language : List.of("zh_cn", "en_us")) {
                 loadLanguage(language);
                 for (int[] size : new int[][]{{320, 240}, {426, 240}, {640, 360}, {854, 480}}) {
-                    for (int category = 0; category < 3; category++) {
+                    for (int category = 0; category < 4; category++) {
                         YsmRagdollSettingsScreen screen = screen(size[0], size[1], category);
                         String context = language + " " + size[0] + "x" + size[1] + " " + category;
                         List<Rectangle> textBounds = new ArrayList<>();

@@ -28,6 +28,7 @@ public final class ClientRagdollEvents {
         if (event.phase != TickEvent.Phase.END) {
             return;
         }
+        GravityGunController.update(1.0F);
         ClientRagdollManager.tick();
         Minecraft minecraft = Minecraft.getInstance();
         // Drain clicks even while a GUI is open: a queued press must never open the
@@ -58,6 +59,12 @@ public final class ClientRagdollEvents {
 
     @SubscribeEvent
     public static void onUseItem(InputEvent.InteractionKeyMappingTriggered event) {
+        if (event.isUseItem() && GravityGunController.isArmed()) {
+            if (event.getHand() == InteractionHand.MAIN_HAND) GravityGunController.start();
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            return;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         if (player == null || minecraft.screen != null || event.getHand() != InteractionHand.MAIN_HAND
@@ -67,6 +74,11 @@ public final class ClientRagdollEvents {
         if (ClientRagdollManager.removeLookingAt(player)) {
             event.setCanceled(true);
         }
+    }
+
+    @SubscribeEvent
+    public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+        if (GravityGunController.scroll(event.getScrollDelta())) event.setCanceled(true);
     }
 
     @SubscribeEvent

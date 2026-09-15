@@ -77,6 +77,10 @@ public final class ClientRagdollManager {
         return ACTIVE_PHYSICS.size();
     }
 
+    static com.ysmragdoll.client.physics.PhysicsGrab grab(Vec3 from, Vec3 to) {
+        return physicsWorld == null ? null : physicsWorld.grab(from, to);
+    }
+
     public enum TestSpawnResult {
         CREATED, STATIC_CREATED, NO_PLAYER, DISABLED, BELOW_VOID, CAPTURE_FAILED
     }
@@ -302,6 +306,7 @@ public final class ClientRagdollManager {
     }
 
     public static void clear(String reason) {
+        GravityGunController.release();
         int count = RAGDOLLS.size();
         for (StaticRagdoll ragdoll : RAGDOLLS) {
             dispose(ragdoll);
@@ -348,6 +353,7 @@ public final class ClientRagdollManager {
 
     public static void render(PoseStack poseStack, Vec3 camera, float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
+        GravityGunController.update(partialTick);
         if (minecraft.level == null || RAGDOLLS.isEmpty()) {
             return;
         }
@@ -403,6 +409,7 @@ public final class ClientRagdollManager {
                 ragdoll.physics.renderDebug(poseStack, camera, debugLines);
             }
         }
+        GravityGunController.render(poseStack, camera, partialTick, buffers);
         buffers.endBatch();
     }
 

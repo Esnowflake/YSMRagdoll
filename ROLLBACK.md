@@ -1,4 +1,24 @@
-# 0.5.24 构建与回退
+# 构建与回退
+
+## 当前版本 0.5.25：重力枪模式
+
+当前开发分支：`feature/gravity-gun`。
+重力枪改动前提交：`11041b9`；标签：`baseline-before-gravity-gun-0.5.24`。
+原 `optimize/collision-cache-management` 分支仍保留在 0.5.24。
+确认工作区干净后，执行 `git switch optimize/collision-cache-management` 即可回到上个版本源码。
+恢复重力枪版本则执行 `git switch feature/gravity-gun`。有未提交修改时先保存，不要强制重置。
+
+构建环境及命令见下文；当前产物为 `build/libs/ysmragdoll-0.5.25-all.jar`。
+游戏内回退请退出游戏，移走新版后换用以下备份，不要同时安装两个版本：
+
+`E:\YSM Ragdoll\backups\ysmragdoll-before-gravity-gun\ysmragdoll-0.5.24-all.jar`
+
+历史独立备份：`E:\YSM Ragdoll\YSMRagdoll-before-gravity-gun.bundle`。这些改动尚未推送到 GitHub。
+
+游戏内重点验证：按住/松开右键，头部与四肢抓取，墙体遮挡，滚轮上下限，切换物品及界面后释放，
+目标到期或低于 Y=-64 时释放；观察实际 YSM 模型与光束的对齐。自动测试不能替代游戏内操作验证。
+
+## 更早的 0.5.24 优化回退记录
 
 优化分支：`optimize/collision-cache-management`。
 优化前提交：`9709b64`；本地 `main` 保持在这个提交。

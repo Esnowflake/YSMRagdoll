@@ -19,6 +19,7 @@ public final class YsmRagdollConfig {
     public static final ForgeConfigSpec.IntValue EXPLOSION_IMPACT_INDEX;
     public static final ForgeConfigSpec.BooleanValue SHOW_COLLISION_BOXES;
     public static final ForgeConfigSpec.BooleanValue INTENSIVE_TEST;
+    public static final ForgeConfigSpec.BooleanValue GRAVITY_GUN_MODE;
     public static final ForgeConfigSpec.DoubleValue COLLISION_OFFSET_X;
     public static final ForgeConfigSpec.DoubleValue COLLISION_OFFSET_Y;
     public static final ForgeConfigSpec.DoubleValue COLLISION_OFFSET_Z;
@@ -73,6 +74,10 @@ public final class YsmRagdollConfig {
         RENDER_OFFSET_X = offset(builder, "renderOffsetX", "布娃娃渲染 X 偏移");
         RENDER_OFFSET_Y = offset(builder, "renderOffsetY", "布娃娃渲染 Y 偏移");
         RENDER_OFFSET_Z = offset(builder, "renderOffsetZ", "布娃娃渲染 Z 偏移");
+        builder.pop();
+        builder.push("testing");
+        GRAVITY_GUN_MODE = builder.comment("重力枪模式：主手木棍按住使用键抓取布娃娃，松开释放，滚轮调距。")
+                .define("gravityGunMode", false);
         builder.pop();
         SPEC = builder.build();
     }

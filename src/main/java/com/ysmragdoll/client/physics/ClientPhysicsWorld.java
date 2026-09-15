@@ -214,6 +214,21 @@ public final class ClientPhysicsWorld {
         bodyOwners.put(body, owner);
     }
 
+    /** Pick the closest actual limb collider; the caller clips the ray against Minecraft blocks. */
+    public PhysicsGrab grab(net.minecraft.world.phys.Vec3 from, net.minecraft.world.phys.Vec3 to) {
+        Vector3f start = new Vector3f((float) from.x, (float) from.y, (float) from.z);
+        Vector3f end = new Vector3f((float) to.x, (float) to.y, (float) to.z);
+        start.add(appliedWorldOffset);
+        end.add(appliedWorldOffset);
+        var ray = new com.bulletphysics.collision.dispatch.CollisionWorld.ClosestRayResultCallback(start, end);
+        ray.collisionFilterGroup = 1;
+        ray.collisionFilterMask = 2;
+        world.rayTest(start, end, ray);
+        if (!ray.hasHit() || !(ray.collisionObject instanceof RigidBody body)) return null;
+        PhysicsRagdoll owner = bodyOwners.get(body);
+        return owner == null ? null : owner.grab(body, ray.hitPointWorld);
+    }
+
     void removeBody(RigidBody body) {
         bodyOwners.remove(body);
         world.removeRigidBody(body);

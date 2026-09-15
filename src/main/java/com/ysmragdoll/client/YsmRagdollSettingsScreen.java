@@ -90,12 +90,15 @@ public final class YsmRagdollSettingsScreen extends Screen {
         addCategoryButton(Category.GENERAL, panelTop + 48);
         addCategoryButton(Category.ADVANCED, panelTop + 74);
         addCategoryButton(Category.MANAGEMENT, panelTop + 100);
+        addCategoryButton(Category.TESTING, panelTop + 126);
         if (category == Category.GENERAL) {
             addGeneralControls();
         } else if (category == Category.ADVANCED) {
             addAdvancedControls();
-        } else {
+        } else if (category == Category.MANAGEMENT) {
             addManagementLabels(ClientRagdollManager.managementEntries());
+        } else {
+            addTestingControls();
         }
         addFooterButtons();
         positionContent();
@@ -118,6 +121,24 @@ public final class YsmRagdollSettingsScreen extends Screen {
         maximum = integerField(contentLeft, y, fieldWidth,
                 draft.maximumRagdolls, 2, "screen.ysmragdoll.general.maximum");
         contentHeight = y + 34;
+    }
+
+    private void addTestingControls() {
+        int y = label("screen.ysmragdoll.testing.gravity_hint", contentLeft, 0, contentWidth);
+        contentWidget(Button.builder(gravityGunLabel(), button -> {
+            boolean enabled = !YsmRagdollConfig.GRAVITY_GUN_MODE.get();
+            YsmRagdollConfig.GRAVITY_GUN_MODE.set(enabled);
+            YsmRagdollConfig.SPEC.save();
+            if (!enabled) GravityGunController.release();
+            button.setMessage(gravityGunLabel());
+        }).bounds(contentLeft, 0, Math.min(260, contentWidth), 20).build(), y);
+        contentHeight = y + 34;
+    }
+
+    private Component gravityGunLabel() {
+        return Component.translatable("screen.ysmragdoll.testing.gravity_gun",
+                Component.translatable(YsmRagdollConfig.GRAVITY_GUN_MODE.get()
+                        ? "options.ysmragdoll.enabled" : "options.ysmragdoll.disabled"));
     }
 
     private void addManagementLabels(List<ClientRagdollManager.ManagementEntry> entries) {
@@ -626,7 +647,8 @@ public final class YsmRagdollSettingsScreen extends Screen {
     private enum Category {
         GENERAL(Component.translatable("screen.ysmragdoll.category.general")),
         ADVANCED(Component.translatable("screen.ysmragdoll.category.advanced")),
-        MANAGEMENT(Component.translatable("screen.ysmragdoll.category.management"));
+        MANAGEMENT(Component.translatable("screen.ysmragdoll.category.management")),
+        TESTING(Component.translatable("screen.ysmragdoll.category.testing"));
 
         private final Component title;
 

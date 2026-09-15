@@ -76,6 +76,18 @@ public final class PhysicsRagdoll {
     private int pushLiftSuppressionSteps;
     private final PlayerCollisionResponse playerCollision;
     private boolean disposed;
+    private PhysicsGrab grab;
+
+    PhysicsGrab grab(RigidBody body, Vector3f hit) {
+        if (disposed || !chunkLoaded) return null;
+        if (grab != null) grab.close();
+        pushLiftSuppressionSteps = 0;
+        grab = new PhysicsGrab(body, hit, world::addConstraint, world::removeConstraint,
+                () -> !disposed && chunkLoaded, () -> world.currentWorldOffset(new Vector3f()));
+        return grab;
+    }
+
+    private boolean isGrabbed() { return grab != null && grab.isActive(); }
 
     public static PhysicsRagdoll create(ClientPhysicsWorld world, PlayerDeathSnapshot snapshot,
                                         OpenYsmModelAdapter.PhysicsModelView model) {
@@ -319,6 +331,7 @@ public final class PhysicsRagdoll {
             return;
         }
         translateBodiesOnly(new Vector3f(0.0F, lift, 0.0F));
+        if (isGrabbed()) return;
         for (BodyPart part : bodies.values()) {
             Vector3f velocity = part.body.getLinearVelocity(new Vector3f());
             if (velocity.y > 0.0F) {
@@ -333,6 +346,7 @@ public final class PhysicsRagdoll {
      * 这里只调整根刚体角速度，不主动施加倾倒力；四肢仍完全交给关节和碰撞求解。
      */
     void biasTowardSideRoll(float seconds) {
+        if (isGrabbed()) return;
         BodyPart body = bodies.get(RagdollDefinition.Role.BODY);
         if (body == null) {
             return;
@@ -354,7 +368,7 @@ public final class PhysicsRagdoll {
     }
 
     public void applyPlayerPush(Player player) {
-        if (!chunkLoaded) {
+        if (!chunkLoaded || isGrabbed()) {
             return;
         }
         updateMaterial();
@@ -585,7 +599,7 @@ public final class PhysicsRagdoll {
 
     /** 玩家推动后的短时间内限制向上速度，避免地面接触把水平冲量转换成原地起跳。 */
     void suppressPlayerPushLift() {
-        if (pushLiftSuppressionSteps <= 0) {
+        if (isGrabbed() || pushLiftSuppressionSteps <= 0) {
             return;
         }
         pushLiftSuppressionSteps--;
@@ -730,6 +744,7 @@ public final class PhysicsRagdoll {
             return;
         }
         disposed = true;
+        if (grab != null) { grab.close(); grab = null; }
         for (TypedConstraint constraint : constraints) {
             world.removeConstraint(constraint);
         }
