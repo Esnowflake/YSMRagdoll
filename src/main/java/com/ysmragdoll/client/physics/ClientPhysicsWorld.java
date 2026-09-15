@@ -103,22 +103,10 @@ public final class ClientPhysicsWorld {
             // Player contact is resolved once in tick(), where the player's
             // actual movement is known. Repeating group translation here for
             // every render catch-up step can amplify one tick into a launch.
-            boolean grabbing = false;
-            for (PhysicsRagdoll ragdoll : ragdolls) {
-                ragdoll.beforeGrabStep(FIXED_STEP_SECONDS);
-                grabbing |= ragdoll.isGrabbed();
-            }
-            int iterations = world.getSolverInfo().numIterations;
-            try {
-                if (grabbing) world.getSolverInfo().numIterations = Math.max(iterations, 60);
-                world.stepSimulation(FIXED_STEP_SECONDS, 0, FIXED_STEP_SECONDS);
-            } finally {
-                world.getSolverInfo().numIterations = iterations;
-            }
+            world.stepSimulation(FIXED_STEP_SECONDS, 0, FIXED_STEP_SECONDS);
             resolveBlockPenetration();
             for (PhysicsRagdoll ragdoll : ragdolls) {
                 if (ragdoll.isChunkLoaded()) {
-                    ragdoll.afterGrabStep(FIXED_STEP_SECONDS);
                     ragdoll.suppressPlayerPushLift();
                     ragdoll.biasTowardSideRoll(FIXED_STEP_SECONDS);
                 }
@@ -255,8 +243,6 @@ public final class ClientPhysicsWorld {
         destination.set(appliedWorldOffset);
         return destination;
     }
-
-    DiscreteDynamicsWorld dynamicsWorld() { return world; }
 
     void addConstraint(TypedConstraint constraint) {
         world.addConstraint(constraint, true);

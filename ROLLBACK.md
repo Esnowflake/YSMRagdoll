@@ -2,22 +2,6 @@
 
 ## 当前版本 0.5.25：重力枪模式
 
-### 同版本抓取稳定性修订
-
-版本号保持 0.5.25，修订前提交 `a32c129`，标签 `baseline-before-grab-stability-0.5.25`。
-原安装包备份：`E:\YSM Ragdoll\backups\ysmragdoll-before-grab-stability\ysmragdoll-0.5.25-all.jar`。
-原历史备份：`E:\YSM Ragdoll\YSMRagdoll-before-grab-stability.bundle`。
-同版本的新旧包文件名相同，以所在文件夹区分。退出游戏后替换安装包；源码回退先保存当前修改，再执行：
-
-```powershell
-git switch -c rollback-before-grab-stability baseline-before-grab-stability-0.5.25
-```
-
-修订加入平滑整体牵引、旋转阻尼、抓取肢体朝向稳定和全肢体移动路径检查。
-请实测快速左右甩动、手部牵引、脚被障碍挡住、松手下落；自动链条测试不能替代所有 YSM 模型验证。
-
-### 0.5.24 回退记录
-
 当前开发分支：`feature/gravity-gun`。
 重力枪改动前提交：`11041b9`；标签：`baseline-before-gravity-gun-0.5.24`。
 原 `optimize/collision-cache-management` 分支仍保留在 0.5.24。
