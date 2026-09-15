@@ -83,11 +83,16 @@ public final class PhysicsRagdoll {
         if (grab != null) grab.close();
         pushLiftSuppressionSteps = 0;
         grab = new PhysicsGrab(body, hit, world::addConstraint, world::removeConstraint,
-                () -> !disposed && chunkLoaded, () -> world.currentWorldOffset(new Vector3f()));
+                () -> !disposed && chunkLoaded, () -> world.currentWorldOffset(new Vector3f()),
+                world.grabJointGuard(constraints));
         return grab;
     }
 
     private boolean isGrabbed() { return grab != null && grab.isActive(); }
+
+    void beforeGrabStep() { if (grab != null) grab.beforeStep(); }
+
+    void afterGrabStep() { if (grab != null) grab.afterStep(); }
 
     public static PhysicsRagdoll create(ClientPhysicsWorld world, PlayerDeathSnapshot snapshot,
                                         OpenYsmModelAdapter.PhysicsModelView model) {

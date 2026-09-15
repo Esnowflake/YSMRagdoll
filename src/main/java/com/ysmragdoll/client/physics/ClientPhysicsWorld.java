@@ -20,6 +20,7 @@ import net.minecraft.world.phys.AABB;
 
 import javax.vecmath.Vector3f;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -103,10 +104,12 @@ public final class ClientPhysicsWorld {
             // Player contact is resolved once in tick(), where the player's
             // actual movement is known. Repeating group translation here for
             // every render catch-up step can amplify one tick into a launch.
+            for (PhysicsRagdoll ragdoll : ragdolls) ragdoll.beforeGrabStep();
             world.stepSimulation(FIXED_STEP_SECONDS, 0, FIXED_STEP_SECONDS);
             resolveBlockPenetration();
             for (PhysicsRagdoll ragdoll : ragdolls) {
                 if (ragdoll.isChunkLoaded()) {
+                    ragdoll.afterGrabStep();
                     ragdoll.suppressPlayerPushLift();
                     ragdoll.biasTowardSideRoll(FIXED_STEP_SECONDS);
                 }
@@ -242,6 +245,10 @@ public final class ClientPhysicsWorld {
     Vector3f currentWorldOffset(Vector3f destination) {
         destination.set(appliedWorldOffset);
         return destination;
+    }
+
+    GrabJointGuard grabJointGuard(List<TypedConstraint> constraints) {
+        return new GrabJointGuard(world, constraints);
     }
 
     void addConstraint(TypedConstraint constraint) {

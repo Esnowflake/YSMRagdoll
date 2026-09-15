@@ -1,8 +1,30 @@
 # 构建与回退
 
-## 当前版本 0.5.25：重力枪模式
+## 当前修订：0.5.25 抓取关节防拉伸
 
-当前开发分支：`feature/gravity-gun`。
+开发分支：`fix/grab-joint-guard`；版本号保持 `0.5.25`。
+本轮开始前的提交为 `2a3ad8d`，标签为 `baseline-before-joint-guard-0.5.25`。
+`feature/gravity-gun` 保留本轮修改前的原始抓取行为。
+
+源码回退：确认工作区干净后执行 `git switch feature/gravity-gun`。
+恢复本轮修订：`git switch fix/grab-joint-guard`。有未提交修改时先保存，不要强制重置。
+
+游戏安装包回退：退出游戏，将 mods 中本轮同名 JAR 换成以下备份，不能同时安装：
+
+`E:\YSM Ragdoll\backups\ysmragdoll-before-joint-guard\ysmragdoll-0.5.25-all.jar`
+
+Git 历史独立备份：`E:\YSM Ragdoll\YSMRagdoll-before-joint-guard.bundle`。
+本轮构建产物仍是 `build/libs/ysmragdoll-0.5.25-all.jar`，不能只根据文件名区分新旧。
+本轮修改只保存在本地，尚未推送到 GitHub。
+
+自动测试包含连续反向拉动、障碍物场景、稳定悬停、松手下落、
+关节修正不直接改写朝向，以及墙体阻止位置修正。仍需游戏内验证不同 YSM 模型、
+抓手/脚/躯干、快速转头、滚轮改变距离、墙角和狭窄空间。
+本阶段允许抓取点落后于准星以保持连接，不包含持握朝向控制。
+
+## 原始版本 0.5.25：重力枪模式
+
+原始重力枪分支：`feature/gravity-gun`。
 重力枪改动前提交：`11041b9`；标签：`baseline-before-gravity-gun-0.5.24`。
 原 `optimize/collision-cache-management` 分支仍保留在 0.5.24。
 确认工作区干净后，执行 `git switch optimize/collision-cache-management` 即可回到上个版本源码。
