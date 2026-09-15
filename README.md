@@ -9,6 +9,25 @@
 爆炸冲击、地面摩擦、方块填入后的推出保护、设置界面和调试碰撞箱。布娃娃不会继续读取死亡
 玩家的动画，也不是原版玩家模型的替身。
 
+## 版本下载
+
+适用于 Minecraft **1.20.1 Forge**，需要 Java 17 和兼容的 YSM 模组。
+请选择对应版本的 `-all.jar`，退出游戏后放入实例的 `mods` 文件夹，不要同时安装多个版本。
+
+| 版本 | 更新内容 | 下载与说明 |
+| --- | --- | --- |
+| **0.5.25（当前版本）** | 牵引模式、快速跟随、关节防拉伸、惯性摆动与松手速度继承；水和岩浆中的浮力；包含 0.5.24 的功能 | [下载 JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/0.5.25/ysmragdoll-0.5.25-all.jar) · [发行说明](https://github.com/Esnowflake/YSMRagdoll/releases/tag/0.5.25) |
+| **0.5.24** | 方块碰撞缓存优化、低于 Y=-64 的布娃娃清理、布娃娃管理页与消失倒计时 | [下载 JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/0.5.24/ysmragdoll-0.5.24-all.jar) · [发行说明](https://github.com/Esnowflake/YSMRagdoll/releases/tag/0.5.24) |
+| **0.5.23** | 之前发布的版本 | [发行说明与下载](https://github.com/Esnowflake/YSMRagdoll/releases/tag/0.5.23) |
+
+源码可通过仓库的 **Tags** 切换到相应版本。Release 附件使用对应版本的构建产物；
+GitHub 自动提供的 Source code 压缩包是源码，不是可以放入游戏的模组安装包。
+
+**牵引用法：** 在设置的“测试”分类开启“牵引模式”，主手拿木棍，瞄准布娃娃按住右键牵引，
+松开右键释放；滚轮调节远近。移动中松手可顺势甩出，切换物品或打开界面会结束牵引。
+
+0.5.25 已通过 47 项自动测试和完整构建；自动测试使用简化场景，不替代不同 YSM 模型的游戏内验证。
+
 ## 版本与环境
 
 ### 0.5.25 牵引惯性与液体浮力修订
@@ -51,7 +70,8 @@
 build/libs/ysmragdoll-0.5.25-all.jar
 ```
 
-`release/` 目前保留的是重构前已经验证的 `0.5.19` 成品；本次 `0.5.25` 源码需要重新构建后测试。
+普通玩家直接从上方 Release 下载对应的 `-all.jar` 即可；自行构建时使用上述路径的产物。
+仓库内 `release/` 目录保留的是早期 `0.5.19` 成品，当前安装包以 GitHub Releases 为准。
 
 不要使用体积更小的 `ysmragdoll-0.5.25.jar` 作为普通游戏发行包，因为它没有包含运行物理所需的
 JBullet 和 vecmath Jar-in-Jar 依赖。
