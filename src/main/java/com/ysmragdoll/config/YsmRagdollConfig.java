@@ -76,7 +76,7 @@ public final class YsmRagdollConfig {
         RENDER_OFFSET_Z = offset(builder, "renderOffsetZ", "布娃娃渲染 Z 偏移");
         builder.pop();
         builder.push("testing");
-        GRAVITY_GUN_MODE = builder.comment("重力枪模式：主手木棍按住使用键抓取布娃娃，松开释放，滚轮调距。")
+        GRAVITY_GUN_MODE = builder.comment("牵引模式：主手拿木棍，按住右键（使用键）牵引布娃娃，松开释放，滚轮调距。")
                 .define("gravityGunMode", false);
         builder.pop();
         SPEC = builder.build();

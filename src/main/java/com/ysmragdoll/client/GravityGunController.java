@@ -49,7 +49,13 @@ public final class GravityGunController {
 
     public static void update(float partialTick) {
         Minecraft mc = Minecraft.getInstance();
-        if (!isArmed() || !mc.options.keyUse.isDown()) {
+        if (!isArmed()) {
+            release();
+            pressHandled = false;
+            return;
+        }
+        if (!mc.options.keyUse.isDown()) {
+            if (grab != null) grab.releaseWithInertia();
             release();
             pressHandled = false;
             return;

@@ -119,6 +119,63 @@ public class GrabJointGuardTest {
     }
 
     @Test
+    public void movingAndStoppingSwaysLimbsAndOnlyExplicitReleaseAddsCarryVelocity() {
+        var world = world();
+        RigidBody hand = body(world, 0.35F, pose(0, 5, 0), new Vector3f(0.1F, 0.25F, 0.1F));
+        RigidBody torso = body(world, 5, pose(0, 4.5F, 0), new Vector3f(0.2F, 0.25F, 0.1F));
+        var joint = new Generic6DofConstraint(hand, torso, pose(0, -0.25F, 0), pose(0, 0.25F, 0), true);
+        joint.setLinearLowerLimit(new Vector3f());
+        joint.setLinearUpperLimit(new Vector3f());
+        joint.setAngularLowerLimit(new Vector3f(-1, -1, -1));
+        joint.setAngularUpperLimit(new Vector3f(1, 1, 1));
+        world.addConstraint(joint, true);
+        var guard = new GrabJointGuard(world, List.of(joint));
+        var grab = new PhysicsGrab(hand, new Vector3f(0, 5.2F, 0), world::addConstraint,
+                world::removeConstraint, () -> true, Vector3f::new, guard);
+        float lag = 0;
+        float swayAfterStop = 0;
+        for (int step = 0; step < 180; step++) {
+            grab.moveTo(new Vector3f(Math.min(step, 60) * 0.05F, 5.2F, 0));
+            grab.beforeStep();
+            world.stepSimulation(1F / 120, 0, 1F / 120);
+            grab.afterStep();
+            float relativeX = torso.getWorldTransform(new Transform()).origin.x
+                    - hand.getWorldTransform(new Transform()).origin.x;
+            if (step < 60) lag = Math.min(lag, relativeX);
+            else swayAfterStop = Math.max(swayAfterStop, relativeX);
+            assertTrue(guard.maximumError() < 0.02F);
+        }
+        System.out.println("Inertial lag=" + lag + ", forward sway=" + swayAfterStop);
+        assertTrue("Body must lag behind the grabbed hand", lag < -0.01F);
+        assertTrue("Body must continue swinging after a stop", swayAfterStop > 0.01F);
+        for (int i = 0; i < 120; i++) {
+            grab.moveTo(new Vector3f(3 + i * 0.05F, 5.2F, 0));
+            grab.beforeStep(); world.stepSimulation(1F / 120, 0, 1F / 120); grab.afterStep();
+        }
+        Vector3f beforeHand = hand.getLinearVelocity(new Vector3f());
+        Vector3f beforeTorso = torso.getLinearVelocity(new Vector3f());
+        grab.releaseWithInertia();
+        Vector3f handChange = hand.getLinearVelocity(new Vector3f()); handChange.sub(beforeHand);
+        Vector3f torsoChange = torso.getLinearVelocity(new Vector3f()); torsoChange.sub(beforeTorso);
+        assertTrue(handChange.x > 1);
+        assertTrue(handChange.epsilonEquals(torsoChange, 0.0001F));
+        Vector3f releasedVelocity = hand.getLinearVelocity(new Vector3f());
+        grab.releaseWithInertia();
+        assertTrue(releasedVelocity.epsilonEquals(hand.getLinearVelocity(new Vector3f()), 0));
+        assertEquals(1, world.getNumConstraints());
+
+        var cancelled = new PhysicsGrab(hand, hand.getWorldTransform(new Transform()).origin,
+                world::addConstraint, world::removeConstraint, () -> true, Vector3f::new, guard);
+        for (int i = 0; i < 30; i++) {
+            cancelled.moveTo(new Vector3f(15 + i * 0.05F, 6, 0));
+            cancelled.beforeStep(); world.stepSimulation(1F / 120, 0, 1F / 120); cancelled.afterStep();
+        }
+        Vector3f beforeCancel = hand.getLinearVelocity(new Vector3f());
+        cancelled.close();
+        assertTrue(beforeCancel.epsilonEquals(hand.getLinearVelocity(new Vector3f()), 0));
+    }
+
+    @Test
     public void wholeAssemblyStopsWhenOnlyLowerLimbHitsWall() {
         var world = world();
         RigidBody upper = body(world, 1, pose(0, 3, 0), new Vector3f(0.1F, 0.1F, 0.1F));

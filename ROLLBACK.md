@@ -1,6 +1,26 @@
 # 构建与回退
 
-## 当前修订：0.5.25 快速抓取与液体浮力
+## 当前修订：0.5.25 牵引模式与惯性反馈
+
+开发分支：`feature/traction-inertia`；版本号保持 `0.5.25`。
+本轮开始前提交：`bb8da5b`；标签：`baseline-before-traction-inertia-0.5.25`。
+
+确认工作区干净后，`git switch fix/responsive-grab-buoyancy` 可回到上一轮源码；
+`git switch feature/traction-inertia` 可恢复本轮源码。有未提交改动时先保存。
+
+退出游戏后，将 mods 中的同名 JAR 换成以下备份即可回退游戏版本：
+
+`E:\YSM Ragdoll\backups\ysmragdoll-before-traction-inertia\ysmragdoll-0.5.25-all.jar`
+
+Git 历史备份：`E:\YSM Ragdoll\YSMRagdoll-before-traction-inertia.bundle`。
+新版仍使用 `build/libs/ysmragdoll-0.5.25-all.jar`，不要同时安装新旧包。改动尚未推送到 GitHub。
+
+本轮加入起拉/停止/转向的有限惯性反馈，以及松开右键时的速度继承；
+切换物品、打开界面和失效清理不会额外抛出。设置更名为“牵引模式”，说明主手木棍、按住右键的用法。
+自动测试覆盖惯性反馈、受阻后的速度衰减、松手与取消的区别、关节连接和快速跟随；
+仍需游戏内验证不同模型和不同抓取部位的摆动手感。
+
+## 上一轮修订：0.5.25 快速抓取与液体浮力
 
 开发分支：`fix/responsive-grab-buoyancy`；版本号保持 `0.5.25`。
 本轮开始前的提交为 `75024b6`，标签为 `baseline-before-responsive-grab-buoyancy-0.5.25`。

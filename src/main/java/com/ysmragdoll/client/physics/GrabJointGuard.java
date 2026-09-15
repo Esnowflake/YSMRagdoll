@@ -43,20 +43,57 @@ final class GrabJointGuard {
         bodies = List.copyOf(connected);
     }
 
-    /** Common position correction preserves all joint distances and adds no throwing velocity. */
-    void follow(RigidBody grabbed, Vector3f error) {
+    /** Common position correction preserves joint distances; returns only the motion actually accepted. */
+    Vector3f follow(RigidBody grabbed, Vector3f error) {
         Vector3f movement = new Vector3f(error);
         movement.scale(FOLLOW_FRACTION);
         float distance = movement.length();
-        if (distance < 0.0001F) return;
+        if (distance < 0.0001F) return new Vector3f();
         if (distance > MAX_FOLLOW_STEP) movement.scale(MAX_FOLLOW_STEP / distance);
         List<RigidBody> assembly = bodies.isEmpty() ? List.of(grabbed) : bodies;
-        if (!prepareSweep.test(assembly, movement)) return;
+        if (!prepareSweep.test(assembly, movement)) return new Vector3f();
         float fraction = 1;
         for (RigidBody part : assembly) fraction = Math.min(fraction, safeFraction(part, movement));
-        if (fraction <= 0) return;
+        if (fraction <= 0) return new Vector3f();
         movement.scale(fraction);
         for (RigidBody part : assembly) translate(part, movement);
+        return movement;
+    }
+
+    void applyInertia(RigidBody grabbed, Vector3f velocityChange) {
+        for (RigidBody part : bodies) {
+            if (part == grabbed || part.getInvMass() <= 0) continue;
+            Vector3f impulse = new Vector3f(velocityChange);
+            impulse.scale(1 / part.getInvMass());
+            part.applyCentralImpulse(impulse);
+            part.activate(true);
+        }
+    }
+
+    void releaseWithVelocity(RigidBody grabbed, Vector3f carryVelocity) {
+        List<RigidBody> assembly = bodies.isEmpty() ? List.of(grabbed) : bodies;
+        Vector3f mean = new Vector3f();
+        float mass = 0;
+        for (RigidBody part : assembly) {
+            if (part.getInvMass() <= 0) continue;
+            float partMass = 1 / part.getInvMass();
+            mean.scaleAdd(partMass, part.getLinearVelocity(new Vector3f()), mean);
+            mass += partMass;
+        }
+        if (mass == 0) return;
+        mean.scale(1 / mass);
+        Vector3f delta = new Vector3f(mean);
+        delta.add(carryVelocity);
+        GrabInertia.limit(delta, 6);
+        delta.sub(mean);
+        // A common change preserves relative joint velocities when releasing the whole assembly.
+        for (RigidBody part : assembly) {
+            if (part.getInvMass() <= 0) continue;
+            Vector3f velocity = part.getLinearVelocity(new Vector3f());
+            velocity.add(delta);
+            part.setLinearVelocity(velocity);
+            part.activate(true);
+        }
     }
 
     float maximumError() {

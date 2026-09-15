@@ -23,6 +23,7 @@ public final class PhysicsGrab implements AutoCloseable {
     private boolean closed;
     private final GrabJointGuard jointGuard;
     private final Vector3f requestedPoint = new Vector3f();
+    private final GrabInertia inertia = new GrabInertia();
 
     PhysicsGrab(RigidBody body, Vector3f hit, Consumer<TypedConstraint> add,
                 Consumer<TypedConstraint> remove, BooleanSupplier valid, Supplier<Vector3f> offset) {
@@ -74,7 +75,9 @@ public final class PhysicsGrab implements AutoCloseable {
         Vector3f delta = new Vector3f(requestedPoint);
         delta.add(offset.get());
         delta.sub(current);
-        if (error < STRAIN_LIMIT) jointGuard.follow(body, delta);
+        Vector3f movement = error < STRAIN_LIMIT ? jointGuard.follow(body, delta) : new Vector3f();
+        Vector3f feedback = inertia.step(movement);
+        if (error < STRAIN_LIMIT) jointGuard.applyInertia(body, feedback);
         current.set(localAnchor);
         body.getWorldTransform(transform);
         transform.transform(current);
@@ -110,5 +113,11 @@ public final class PhysicsGrab implements AutoCloseable {
         closed = true;
         remove.accept(constraint);
         body.activate(true);
+    }
+
+    /** Explicit use-key release only; closing a screen/world/invalid grab must not throw a corpse. */
+    public void releaseWithInertia() {
+        if (isActive() && jointGuard != null) jointGuard.releaseWithVelocity(body, inertia.releaseVelocity());
+        close();
     }
 }
