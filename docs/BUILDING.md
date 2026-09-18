@@ -18,7 +18,7 @@ the JAR is saved under `libs/` on the project drive, never committed.
 New-Item -ItemType Directory -Force libs | Out-Null
 $url = 'https://github.com/OpenYSM/OpenYSM/releases/download/ysm-2.6.5-forge%2Bmc1.20.1/ysm-2.6.5-forge%2Bmc1.20.1-all.jar'
 $file = 'libs/openysm-2.6.5-forge+mc1.20.1.jar'
-Invoke-WebRequest $url -Proxy 'http://127.0.0.1:7890' -OutFile $file
+Invoke-WebRequest $url -Proxy 'http://<proxy-host>:<proxy-port>' -OutFile $file
 $expected = '46eac038c314e7df1af80deea3c9e507f9f1e7ddf66b04eec455560dbfd51909'
 if ((Get-FileHash $file -Algorithm SHA256).Hash.ToLower() -ne $expected) {
     throw 'OpenYSM checksum mismatch'
@@ -67,9 +67,9 @@ configure Java's dependency resolver.
 ## IDE
 
 Open the Gradle project and use its wrapper. Set **Gradle user home** to an
-absolute project-drive path such as `D:\YSMRagdoll\.gradle-home`.
+absolute project-drive path such as `<project-directory>/.gradle-home`.
 IDE calls do not necessarily invoke `build.ps1` or `gradlew.bat`; wrapper defaults
-alone do not configure IDE caches. Existing C: caches are not deleted.
+alone do not configure IDE caches.
 
 ## Verification
 

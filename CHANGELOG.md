@@ -47,7 +47,7 @@ New release notes are generated from the matching version section. Historical da
 - 复用扫描临时容器，保留新放置方块的推出保护，并按实际世界坐标扫描碰撞偏移后的区域。
 - 新增“布娃娃管理”，显示数量、逐具倒计时、手动清除或永久状态。
 - 新增低于世界 Y=-64 的自动清理，不受手动清除和永久模式影响。
-- 回退基线、安装包备份和本机构建命令见 `ROLLBACK.md`。
+- 历史开发记录和回退基线见 `ROLLBACK.md`。
 
 ## [0.5.23]
 
@@ -97,4 +97,3 @@ New release notes are generated from the matching version section. Historical da
 - 改用 Forge 混淆安全反射与无崩溃后备，并隔离服务端/客户端爆炸异常；
 - 将两个指数输入框改为左右两列，修复高级设置文字和输入框重叠；
 - 保留 `0.5.16` 已稳定的推动、方块碰撞、关节、地面穿透纠正与姿态回写逻辑。
-

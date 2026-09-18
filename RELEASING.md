@@ -91,7 +91,8 @@ CI 和 release 的 build job 只有只读权限；独立 publish job 才有
 
 ## English Summary
 
-Only Forge 1.20.1 is implemented. Maintain `[Unreleased]`, create a version section,
+The supported release matrix is Forge 1.20.1, Fabric 1.20.1 and Fabric 1.21.1.
+Maintain `[Unreleased]`, create a version section,
 bump `mod_version`, and merge a reviewed PR after tests and in-game checks.
 Tag the merged commit as `vMAJOR.MINOR.PATCH`; alpha/beta/rc numbered suffixes
 are also supported. GitHub builds the source, verifies the JAR, generates notes

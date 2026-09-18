@@ -465,7 +465,7 @@ ysm-ragdoll-logs/ysm-ragdoll-intensive.log
 `[ysmragdoll]`；性能行只写入本模组专属日志，避免污染 Forge 主日志。要强制指定诊断目录，可给 JVM 添加：
 
 ```text
--Dysmragdoll.projectDir=D:\path\to\project
+-Dysmragdoll.projectDir=<project-directory>
 ```
 
 正常创建时的重要日志顺序包括：
@@ -505,7 +505,7 @@ FPS窗口 10.0s: 实测平均=... 布娃娃=... 模组渲染平均=...ms
 
 导入步骤：
 
-1. 启动 IntelliJ IDEA。当前机器可使用 `D:\IntelliJ IDEA 2026.1.3\bin\idea64.exe`。
+1. 启动 IntelliJ IDEA。当前机器可使用 `idea.exe`。
 2. 选择“打开”，指向 `E:\YSM Ragdoll\YSM Ragdoll`，不要只打开 `src`。
 3. 选择“信任项目”，等待 IDEA 按 Gradle 工程导入。
 4. 将 Project SDK 和 Gradle JVM 都设为 JDK 17。
@@ -533,16 +533,16 @@ Gradle 分发包和 Forge、Minecraft 映射、JBullet、vecmath 等依赖默认
 PowerShell 5.1 / 7 构建命令：
 
 ```powershell
-$env:JAVA_HOME = 'D:\Program Files\JDK-17'
+$env:JAVA_HOME = '<path-to-jdk-17>'
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 .\build.ps1 clean build
 ```
 
 编译目标是 Java 17，GitHub Actions 使用 JDK 17。脚本尊重显式指定的
 `JAVA_HOME`。未指定时，若工程 `.jdks/` 中有 JDK 17 且系统有 JDK 21，
-则使用 JDK 21 运行 Gradle、JDK 17 编译，以兼容本机的 Java 17 loopback
+则使用 JDK 21 运行 Gradle、JDK 17 编译，以兼容部分 Java 17 环境的 loopback
 问题；否则使用工程内 JDK 17。脚本不会自动下载 JDK，也不会将编译目标改为 21。
-本机已具备上述环境时，可直接执行 `.\build.ps1 clean build`，无需设置 `JAVA_HOME`。
+具备上述环境时，可直接执行 `.\build.ps1 clean build`，无需设置 `JAVA_HOME`。
 脚本运行后会恢复其修改的环境变量和工作目录。
 
 ### 代理构建
@@ -553,7 +553,7 @@ HTTP/HTTPS 代理，不写入仓库。PAC 自动配置需要手动指定 `GRADLE
 仅支持 HTTP 代理端点（同样用于 HTTPS 请求），不将 SOCKS 端点冒充 HTTP 代理。
 
 ```powershell
-$env:HTTPS_PROXY = 'http://127.0.0.1:7890'
+$env:HTTPS_PROXY = 'http://<proxy-host>:<proxy-port>'
 $env:HTTP_PROXY = $env:HTTPS_PROXY
 $env:NO_PROXY = 'localhost,127.0.0.1'
 .\build.ps1 clean build
@@ -666,3 +666,4 @@ YSM Ragdoll/
 
 本工程与发行 JAR 不包含 Minecraft、官方 YSM 模组，也不包含任何玩家模型、纹理或动画资源。
 玩家资源可能有独立许可；使用、修改或分发这些资源前应遵守对应作者的授权。
+
