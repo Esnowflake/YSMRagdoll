@@ -20,7 +20,9 @@ final class TractionBeam {
         }
         double dt = Math.max(0, Math.min(0.05, seconds));
         previousTarget = previousTarget.lerp(target, -Math.expm1(-dt / 0.09));
-        Vec3 desired = previousTarget.subtract(target).scale(0.85)
+        // Bow towards the pulling direction, then return to the actual anchor at the endpoint.
+        // Reversing this displacement makes the beam bulge back towards the old aim position.
+        Vec3 desired = target.subtract(previousTarget).scale(0.85)
                 .add(target.subtract(anchor).scale(0.4));
         if (desired.lengthSqr() > 1.44) desired = desired.normalize().scale(1.2);
         bend = bend.lerp(desired, -Math.expm1(-dt / 0.045));

@@ -25,11 +25,11 @@ public class TractionBeamTest {
         var beam = new TractionBeam();
         beam.update(Vec3.ZERO, Vec3.ZERO, 0);
         Vec3 target = new Vec3(1, 0, 0);
-        assertTrue(beam.update(target, target, 1.0 / 60).x < 0);
+        assertTrue(beam.update(target, target, 1.0 / 60).x > 0);
         beam.reset();
         beam.update(new Vec3(-12, 0, 0), new Vec3(-12, 0, 0), 0);
         Vec3 fullTurn = new Vec3(12, 0, 0);
-        assertTrue(beam.update(fullTurn, fullTurn, 1.0 / 60).x < 0);
+        assertTrue(beam.update(fullTurn, fullTurn, 1.0 / 60).x > 0);
         beam.reset();
         beam.update(Vec3.ZERO, Vec3.ZERO, 0);
         Vec3 bend = Vec3.ZERO;
@@ -38,6 +38,22 @@ public class TractionBeamTest {
         beam.update(target.add(2, 0, 0), target, 1.0 / 60);
         beam.reset();
         assertEquals(Vec3.ZERO, beam.update(target, target, 0));
+    }
+
+    @Test
+    public void curveBowsTowardsPullOnEitherSideWhileKeepingAnchorAttached() {
+        Vec3 from = Vec3.ZERO;
+        Vec3 anchor = new Vec3(0, 0, 6);
+        for (Vec3 movement : new Vec3[]{new Vec3(-1, 0, 0), new Vec3(1, 0, 0),
+                new Vec3(0, -1, 0), new Vec3(0, 1, 0)}) {
+            var beam = new TractionBeam();
+            beam.update(anchor, anchor, 0);
+            Vec3 bend = beam.update(anchor.add(movement), anchor, 1.0 / 60);
+            Vec3 bulge = TractionBeam.point(from, anchor, bend, 2.0 / 3)
+                    .subtract(from.lerp(anchor, 2.0 / 3));
+            assertTrue("The curve must bow towards the pull, not the old target", bulge.dot(movement) > 0);
+            assertEquals(anchor, TractionBeam.point(from, anchor, bend, 1));
+        }
     }
 
     @Test

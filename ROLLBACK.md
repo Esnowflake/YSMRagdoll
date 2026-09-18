@@ -2,6 +2,10 @@
 
 ## 当前本地修订：0.5.25 柔性牵引线
 
+方向修正：曲线改为朝牵引方向弯曲，再接回实际抓取点。
+修正前标签：`baseline-before-beam-direction-fix-0.5.25`；修正前安装包：
+`E:\YSM Ragdoll\backups\ysmragdoll-before-beam-direction-fix\ysmragdoll-0.5.25-all.jar`。
+
 开发分支：`fix/flexible-traction-beam`；回退标签：`baseline-before-flexible-beam-0.5.25`。
 仅修改蓝线显示：玩家端向木棍附近延伸，布娃娃端呈现平滑拖尾；物理参数不变。
 本轮未上传 GitHub，也未替换已发布 Release 的附件。
