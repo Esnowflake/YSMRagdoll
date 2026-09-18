@@ -21,3 +21,6 @@ Ragdoll/
 114514.txt
 libs/
 __pycache__/
+/docs/HISTORY.zh-CN.md
+/ROLLBACK.md
+/releases/

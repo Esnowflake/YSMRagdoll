@@ -4,7 +4,7 @@
 
 ## Requirements / 前置条件
 
-- Minecraft 1.20.1 Forge source requires JDK 17 for compilation.
+- Run Gradle with JDK 21; both Minecraft 1.20.1 targets also need a JDK 17 toolchain.
 - The wrapper downloads Gradle 8.14.3 and checks its pinned SHA-256.
 - OpenYSM is compile-only; selected parser classes are extracted with their MIT license.
 - Internet access is required on the first build. Use your system proxy where needed.
@@ -40,13 +40,13 @@ PAC requires an explicit `GRADLE_PROXY_URL`; SOCKS endpoints are not treated as
 HTTP proxies. Shell-sensitive credentials are rejected. Environment variables
 and the working directory are restored afterward.
 
-An explicit `JAVA_HOME` chooses the Gradle JVM. JDK 17 remains the compiler
-toolchain. On this host, system Java 21 can run Gradle while local Java 17 in
-`.jdks/` compiles the mod, avoiding a Java 17 loopback failure.
+An explicit `JAVA_HOME` chooses the Gradle JVM. Use JDK 21 for Gradle and make
+JDK 17 available as a toolchain for the 1.20.1 targets. Minecraft 1.21.1 compiles
+with JDK 21. The script does not install JDKs.
 
 ## Linux / macOS
 
-Use JDK 17 and keep downloads on the project drive:
+Use JDK 21 with a JDK 17 toolchain available and keep downloads on the project drive:
 
 ```sh
 export GRADLE_USER_HOME="$PWD/.gradle-home"
@@ -84,8 +84,8 @@ $env:PYTHONDONTWRITEBYTECODE = '1'
 $env:TEMP = "$PWD\.tmp"
 $env:TMP = $env:TEMP
 python -m unittest discover -s scripts -p 'test_*.py'
-python scripts/release.py validate v0.5.26
-python scripts/release.py prepare v0.5.26
+python scripts/release.py validate v0.5.26-beta.1
+python scripts/release.py prepare v0.5.26-beta.1
 ```
 
 Python 3.11+ is required only for release tooling. Use the current project version

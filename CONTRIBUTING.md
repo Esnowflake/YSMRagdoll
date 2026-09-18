@@ -1,11 +1,11 @@
-# 团队协作 / Contributing
+# 贡献指南 / Contributing
 
 [简体中文首页](README.md) | [English home](README.en.md)
 
 ## Collaborator 与 Fork 的区别
 
-你是原仓库的 Collaborator，有权限向允许写入的分支推送。
-作者和你使用同一个远端仓库，不需要额外创建 Fork 来“同步原作者”。
+欢迎报告问题、改进文档或提交代码。较大的改动建议先通过 Issue 讨论。
+有写权限的贡献者可以向允许写入的分支推送；其他贡献者可使用 Fork 提交 PR。
 `origin/main` 是你上次获取到的远端主分支记录，`main` 是本地主分支。
 作者推送不会自动改动你的本地文件；`git fetch` 只更新远端记录。
 自动化构建使用独立的 GitHub Actions 工作流；协作分支仍以本仓库为准。
@@ -19,12 +19,12 @@
 git switch main
 git fetch origin
 git pull --ff-only origin main
-git switch -c codex/my-change
+git switch -c feature/my-change
 # edit and test
 git add <changed-files>
 git diff --cached
 git commit -m "Describe the change"
-git push -u origin codex/my-change
+git push -u origin feature/my-change
 # open a pull request targeting Esnowflake/YSMRagdoll:main
 ```
 
@@ -71,8 +71,9 @@ Rebase 可整理仅自己使用的未共享提交，但会重写提交 ID；不�
 
 日常用户可见改动写入 `CHANGELOG.md` 的 `[Unreleased]`。
 发布时归入新版本章节并更新 `gradle.properties`；不要改写已发布标签。
-历史 `releases/` 文档保留，新发布以 changelog 为唯一日志输入。
-详见 [发布流程](RELEASING.md)。
+新发布以 changelog 为唯一日志输入。
+本地开发见 [构建文档](docs/BUILDING.md)，维护者请阅读 [发布流程](docs/RELEASING.md)。
+不要提交个人模型、依赖包、日志、凭据或本地测试记录。
 
 ## English Summary
 

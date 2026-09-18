@@ -1,6 +1,9 @@
-# YSM Ragdoll
+# 使用与技术参考（Forge 1.20.1）
 
 [返回中文首页](../README.md) | [English](../README.en.md)
+
+本文保留 Forge 0.5.26 的使用与实现细节，不作为跨平台版本清单。
+当前下载与兼容性以首页为准，开发环境以 [构建文档](BUILDING.md) 为准。
 
 `ysmragdoll` 是面向 Minecraft 1.20.1 Forge 与 Yes Steve Model（YSM）的客户端布娃娃物理模组。
 玩家死亡后，服务端只广播一份很小的死亡状态；安装模组的客户端从本机已经加载的 YSM 模型中
@@ -33,7 +36,7 @@ GitHub 自动提供的 Source code 压缩包是源码，不是可以放入游戏
 
 ## 版本与环境
 
-历史功能演进见 [更新日志](../CHANGELOG.md) 和 [详细历史说明](HISTORY.zh-CN.md)。
+历史功能演进见 [更新日志](../CHANGELOG.md)。
 
 ### 运行环境
 

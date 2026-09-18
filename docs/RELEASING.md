@@ -1,6 +1,8 @@
 # 发布流程 / Releasing
 
-[中文](README.md) | [English](README.en.md) | [更新日志 / Changelog](CHANGELOG.md)
+[贡献指南](../CONTRIBUTING.md) | [构建文档](BUILDING.md) | [更新日志](../CHANGELOG.md)
+
+本文面向负责发布的维护者；安装与下载请见 [首页](../README.md)。
 
 ## 支持范围
 
@@ -16,7 +18,7 @@ Fabric 是实验性移植；通过编译、单元测试和真实 YSM 类的 Mixi
 - 用户可见变更写到 `CHANGELOG.md` 的 `## [Unreleased]` 下。
 - 使用 `### Added / 新增`、`### Changed / 变更`、`### Fixed / 修复`、
   `### Removed / 移除`、`### Security / 安全` 分类；无内容的分类不必保留。
-- 不在 README 重复维护历史日志；`releases/` 和 `ROLLBACK.md` 保留旧记录。
+- 不在 README 重复维护历史日志；新版本统一使用 `CHANGELOG.md`。
 
 ## 正式发布
 
@@ -41,7 +43,7 @@ Fabric 是实验性移植；通过编译、单元测试和真实 YSM 类的 Mixi
    创建 **Draft Release（草稿）**，任一目标失败都不会发布残缺矩阵。
    维护者检查测试报告、附件和更新日志后，在 GitHub 点击 Publish release。
 
-安装包分别命名为 `ysmragdoll-0.5.27+mc1.20.1-forge-all.jar`、
+模组文件分别命名为 `ysmragdoll-0.5.27+mc1.20.1-forge-all.jar`、
 `ysmragdoll-0.5.27+mc1.20.1-fabric-all.jar`、
 `ysmragdoll-0.5.27+mc1.21.1-fabric-all.jar`。
 构建目录中的普通 `-all.jar` 不改名，发布准备阶段添加平台标识。

@@ -38,7 +38,7 @@ New release notes are generated from the matching version section. Historical da
 - 木棍按住使用键抓取实际肢体，松开释放，滚轮调距，细蓝色光束指示抓取点。
 - 使用有冲量上限的点约束牵引，保留碰撞和重力；抓取期间暂停会抵消牵引的玩家推动及侧翻修正。
 - 新增约束牵引、释放下落、旋转抓取点、失效清理和距离范围测试；布局检查覆盖四个分类。
-- 新增优化后 0.5.24 的独立回退点，见 `ROLLBACK.md`。
+- 新增优化后 0.5.24 的独立回退点。
 
 ## [0.5.24]
 
@@ -47,7 +47,7 @@ New release notes are generated from the matching version section. Historical da
 - 复用扫描临时容器，保留新放置方块的推出保护，并按实际世界坐标扫描碰撞偏移后的区域。
 - 新增“布娃娃管理”，显示数量、逐具倒计时、手动清除或永久状态。
 - 新增低于世界 Y=-64 的自动清理，不受手动清除和永久模式影响。
-- 历史开发记录和回退基线见 `ROLLBACK.md`。
+- 保留历史版本的回退基线。
 
 ## [0.5.23]
 
