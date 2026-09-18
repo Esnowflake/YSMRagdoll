@@ -11,16 +11,11 @@
 从 [GitHub Releases](https://github.com/Esnowflake/YSMRagdoll/releases) 下载带
 `-all.jar` 后缀的安装包。普通 JAR 和 Source code 压缩包不是完整安装包。
 
-| Minecraft | 平台 | Java | 状态 |
-| --- | --- | --- | --- |
-| 1.20.1 | Forge 47.4.x | 17 | 当前实现；构建依赖 Forge 47.4.10 |
-| 1.20.1 | Fabric | 17 | 实验性移植；独立构建、测试与 YSM 注入检查 |
-| 1.21.1 | Fabric | 21 | 实验性移植；独立构建、测试与 YSM 注入检查 |
-
-不构建 Forge 1.21.1 或 NeoForge。Fabric 改动尚未正式发布，完整游戏内验收仍待完成。
-YSM 捕获适配针对上述三个目标的 **YSM 2.6.5** 类和方法，不保证兼容其他版本。
-不能只修改 Minecraft 版本号或构建矩阵就得到可用的跨版本模组。
-自动编译和单元测试不替代真实模型的游戏内测试。
+| Minecraft | 平台 | Java | 状态 | Release 下载 |
+| --- | --- | --- | --- | --- |
+| 1.20.1 | Forge 47.4.x | 17 | 当前实现；构建依赖 Forge 47.4.10 | [0.5.26-beta.1 · JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.20.1-forge-all.jar) |
+| 1.20.1 | Fabric | 17 | 实验性移植；独立构建、测试与 YSM 注入检查 | [0.5.26-beta.1 · JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.20.1-fabric-all.jar) |
+| 1.21.1 | Fabric | 21 | 实验性移植；独立构建、测试与 YSM 注入检查 | [0.5.26-beta.1 · JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.21.1-fabric-all.jar) |
 
 ## 安装与使用
 

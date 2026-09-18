@@ -13,17 +13,11 @@ Download the **`-all.jar`** from
 [GitHub Releases](https://github.com/Esnowflake/YSMRagdoll/releases).
 The plain JAR and source archives are not complete installation packages.
 
-| Minecraft | Loader | Java | Status |
-| --- | --- | --- | --- |
-| 1.20.1 | Forge 47.4.x | 17 | Implemented; built against Forge 47.4.10 |
-| 1.20.1 | Fabric | 17 | Experimental port; separate build, tests and YSM injection checks |
-| 1.21.1 | Fabric | 21 | Experimental port; separate build, tests and YSM injection checks |
-
-Forge 1.21.1 and NeoForge are not built. Fabric changes are not yet officially
-released and still require full in-game acceptance testing.
-The capture adapters target **YSM 2.6.5 on the three targets above**, including its obfuscated
-classes and methods. Other versions require actual adapters, not just a build
-matrix change. Compilation and unit tests do not replace in-game model testing.
+| Minecraft | Loader | Java | Status | Release Download |
+| --- | --- | --- | --- | --- |
+| 1.20.1 | Forge 47.4.x | 17 | Implemented; built against Forge 47.4.10 | [0.5.26-beta.1 JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.20.1-forge-all.jar) |
+| 1.20.1 | Fabric | 17 | Experimental port; separate build, tests and YSM injection checks | [0.5.26-beta.1 JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.20.1-fabric-all.jar) |
+| 1.21.1 | Fabric | 21 | Experimental port; separate build, tests and YSM injection checks | [0.5.26-beta.1 JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.21.1-fabric-all.jar) |
 
 ## Installation And Use
 
