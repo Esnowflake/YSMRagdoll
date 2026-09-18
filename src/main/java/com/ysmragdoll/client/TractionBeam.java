@@ -13,17 +13,23 @@ final class TractionBeam {
     }
 
     Vec3 update(Vec3 target, Vec3 anchor, double seconds) {
+        return update(target, anchor, seconds, 70);
+    }
+
+    Vec3 update(Vec3 target, Vec3 anchor, double seconds, int strength) {
+        if (strength <= 0 || strength >= 100) {
+            reset();
+            return Vec3.ZERO;
+        }
         // A full turn at the 12-block reach can move the target 24 blocks; only reset for teleports.
         if (previousTarget == null || previousTarget.distanceToSqr(target) > 4096) {
             previousTarget = target;
             bend = Vec3.ZERO;
         }
         double dt = Math.max(0, Math.min(0.05, seconds));
-        previousTarget = previousTarget.lerp(target, -Math.expm1(-dt / 0.09));
-        // Bow towards the pulling direction, then return to the actual anchor at the endpoint.
-        // Reversing this displacement makes the beam bulge back towards the old aim position.
-        Vec3 desired = target.subtract(previousTarget).scale(0.85)
-                .add(target.subtract(anchor).scale(0.4));
+        previousTarget = target;
+        // Real physical lag controls the arc, even after the player has stopped turning.
+        Vec3 desired = target.subtract(anchor).scale(0.85);
         if (desired.lengthSqr() > 1.44) desired = desired.normalize().scale(1.2);
         // Respond to a new pull quickly, but retain the existing arc while the pull settles.
         boolean relaxing = desired.dot(bend) >= 0 && desired.lengthSqr() < bend.lengthSqr();

@@ -1,6 +1,20 @@
 # 构建与回退
 
-## 当前本地修订：0.5.25 柔性牵引线
+## 当前本地修订：0.5.25 牵引线力矩
+
+分支：`feature/traction-strength`；回退标签：`baseline-before-traction-strength-0.5.25`。
+新增 0–100 的实际牵引力度设置，默认 70；0 不牵引，1–99 有限力软牵引，100 刚性跟随且线条笔直。
+软线按布娃娃实际滞后弯曲，颜色保持 `#33FFCC`。
+
+退出游戏后，用以下安装包替换同名 JAR 即可回退：
+`E:\YSM Ragdoll\backups\ysmragdoll-before-traction-strength\ysmragdoll-0.5.25-all.jar`。
+源码回退：保存未提交修改后，执行 `git switch fix/flexible-traction-beam`。
+恢复：`git switch feature/traction-strength`。本轮未推送 GitHub，未替换 Release 附件。
+
+验证覆盖零力度、软牵引总力上限、100 刚性跟随、多部位连接、强弱差异、障碍物阻挡、
+松手不重复加速、真实滞后驱动曲线，以及设置范围校验与窗口缩放。仍需游戏内确认不同模型的手感。
+
+## 上一轮本地修订：0.5.25 柔性牵引线
 
 平滑圆弧修订：改用连续单段曲线，限制屏幕投影中的末端翘起与回折，延长停止后的回直过程，
 颜色改为 `#33FFCC`。物理行为不变。本轮回退标签：`baseline-before-smooth-beam-arc-0.5.25`；

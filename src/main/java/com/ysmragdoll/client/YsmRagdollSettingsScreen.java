@@ -57,6 +57,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
     private EditBox lifetime;
     private EditBox maximum;
     private EditBox easyPush;
+    private EditBox tractionStrength;
     private EditBox groundFriction;
     private EditBox explosionPush;
     private final EditBox[] renderOffsets = new EditBox[3];
@@ -132,6 +133,10 @@ public final class YsmRagdollSettingsScreen extends Screen {
             if (!enabled) GravityGunController.release();
             button.setMessage(gravityGunLabel());
         }).bounds(contentLeft, 0, Math.min(260, contentWidth), 20).build(), y);
+        y = label("screen.ysmragdoll.testing.strength", contentLeft, y + 34, contentWidth);
+        tractionStrength = integerField(contentLeft, y, Math.min(260, contentWidth),
+                draft.tractionStrength, 3, "screen.ysmragdoll.testing.strength");
+        y = label("screen.ysmragdoll.testing.strength_hint", contentLeft, y + 34, contentWidth);
         contentHeight = y + 34;
     }
 
@@ -434,6 +439,9 @@ public final class YsmRagdollSettingsScreen extends Screen {
                         "screen.ysmragdoll.general.lifetime");
                 draft.maximumRagdolls = readInteger(maximum, 0, YsmRagdollConfig.RAGDOLL_LIMIT,
                         "screen.ysmragdoll.general.maximum");
+            } else if (category == Category.TESTING) {
+                draft.tractionStrength = readInteger(tractionStrength, 0, 100,
+                        "screen.ysmragdoll.testing.strength");
             } else if (category == Category.ADVANCED) {
                 draft.easyPushIndex = readInteger(easyPush, 0, 100,
                         "screen.ysmragdoll.advanced.easy_push");
@@ -515,6 +523,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
         YsmRagdollConfig.MANUAL_REMOVAL.set(draft.manualRemoval);
         YsmRagdollConfig.MAX_RAGDOLLS.set(draft.maximumRagdolls);
         YsmRagdollConfig.EASY_PUSH_INDEX.set(draft.easyPushIndex);
+        YsmRagdollConfig.TRACTION_STRENGTH.set(draft.tractionStrength);
         YsmRagdollConfig.GROUND_FRICTION.set(draft.groundFriction);
         YsmRagdollConfig.EXPLOSION_IMPACT_INDEX.set(draft.explosionPushIndex);
         YsmRagdollConfig.SHOW_COLLISION_BOXES.set(draft.showCollisionBoxes);
@@ -542,6 +551,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
         lifetime = null;
         maximum = null;
         easyPush = null;
+        tractionStrength = null;
         groundFriction = null;
         explosionPush = null;
         for (int axis = 0; axis < 3; axis++) {
@@ -551,7 +561,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
     }
 
     private void resetInputColors() {
-        for (EditBox field : new EditBox[]{lifetime, maximum, easyPush, groundFriction,
+        for (EditBox field : new EditBox[]{lifetime, maximum, easyPush, tractionStrength, groundFriction,
                 explosionPush, renderOffsets[0], renderOffsets[1], renderOffsets[2],
                 collisionOffsets[0], collisionOffsets[1], collisionOffsets[2]}) {
             if (field != null) {
@@ -662,6 +672,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
         private boolean manualRemoval;
         private int maximumRagdolls;
         private int easyPushIndex;
+        private int tractionStrength;
         private int groundFriction;
         private int explosionPushIndex;
         private boolean showCollisionBoxes;
@@ -675,6 +686,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
             value.manualRemoval = YsmRagdollConfig.MANUAL_REMOVAL.get();
             value.maximumRagdolls = YsmRagdollConfig.MAX_RAGDOLLS.get();
             value.easyPushIndex = YsmRagdollConfig.EASY_PUSH_INDEX.get();
+            value.tractionStrength = YsmRagdollConfig.TRACTION_STRENGTH.get();
             value.groundFriction = YsmRagdollConfig.GROUND_FRICTION.get();
             value.explosionPushIndex = YsmRagdollConfig.EXPLOSION_IMPACT_INDEX.get();
             value.showCollisionBoxes = YsmRagdollConfig.SHOW_COLLISION_BOXES.get();

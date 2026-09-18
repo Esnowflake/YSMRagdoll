@@ -8,6 +8,8 @@
   "screen.ysmragdoll.category.management": "布娃娃管理",
   "screen.ysmragdoll.category.testing": "测试",
   "screen.ysmragdoll.testing.gravity_gun": "牵引模式：%s",
+  "screen.ysmragdoll.testing.strength": "牵引线力矩（0–100）",
+  "screen.ysmragdoll.testing.strength_hint": "默认70。0：无法牵引；1–99：有限牵引力，数值越小越柔软，过低时可能提不起布娃娃；100：刚性跟随，线条不变形，仍受方块阻挡。柔软模式按布娃娃实际滞后弯曲，跟上后逐渐拉直。点击应用或确定保存。",
   "screen.ysmragdoll.testing.gravity_hint": "开启后，主手拿木棍，瞄准布娃娃按住右键即可牵引，松开右键释放。拉动、急停和转向会产生适度惯性摆动，移动中松手可将布娃娃甩出。滚轮向上推远、向下拉近（1.5–12 格），牵引时不切换快捷栏。切换物品或打开界面会结束牵引。点击开关立即保存，不受取消按钮影响。",
   "screen.ysmragdoll.management.count": "当前世界布娃娃：%s 具",
   "screen.ysmragdoll.management.hint": "显示本客户端的布娃娃，按已应用设置更新。低于 Y=-64 时自动清除。",

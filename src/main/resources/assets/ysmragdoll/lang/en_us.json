@@ -8,6 +8,8 @@
   "screen.ysmragdoll.category.management": "Ragdolls",
   "screen.ysmragdoll.category.testing": "Testing",
   "screen.ysmragdoll.testing.gravity_gun": "Traction Mode: %s",
+  "screen.ysmragdoll.testing.strength": "Traction Line Strength (0–100)",
+  "screen.ysmragdoll.testing.strength_hint": "Default 70. 0: no traction. 1–99: limited pulling force; lower values are softer and may be too weak to lift the ragdoll. 100: rigid tracking with a straight beam, still blocked by terrain. Soft beams curve with actual ragdoll lag and gradually straighten as it catches up. Apply or Done saves this value.",
   "screen.ysmragdoll.testing.gravity_hint": "Enable this mode, hold a stick in your main hand, then hold right-click (Use) on a ragdoll to pull it. Release to let go. Starting, stopping and turning cause gentle inertial sway; releasing while moving carries the ragdoll forward. Scroll up to push away, down to pull closer (1.5–12 blocks), without changing hotbar slots. Changing items or opening a screen ends traction. Toggling saves immediately; Cancel does not undo it.",
   "screen.ysmragdoll.management.count": "Ragdolls in this world: %s",
   "screen.ysmragdoll.management.hint": "Shows this client's ragdolls using applied settings. Removed automatically below Y=-64.",

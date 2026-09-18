@@ -45,11 +45,15 @@ final class GrabJointGuard {
 
     /** Common position correction preserves joint distances; returns only the motion actually accepted. */
     Vector3f follow(RigidBody grabbed, Vector3f error) {
+        return follow(grabbed, error, false);
+    }
+
+    Vector3f follow(RigidBody grabbed, Vector3f error, boolean rigid) {
         Vector3f movement = new Vector3f(error);
-        movement.scale(FOLLOW_FRACTION);
+        movement.scale(rigid ? 1 : FOLLOW_FRACTION);
         float distance = movement.length();
         if (distance < 0.0001F) return new Vector3f();
-        if (distance > MAX_FOLLOW_STEP) movement.scale(MAX_FOLLOW_STEP / distance);
+        if (!rigid && distance > MAX_FOLLOW_STEP) movement.scale(MAX_FOLLOW_STEP / distance);
         List<RigidBody> assembly = bodies.isEmpty() ? List.of(grabbed) : bodies;
         if (!prepareSweep.test(assembly, movement)) return new Vector3f();
         float fraction = 1;
@@ -58,6 +62,34 @@ final class GrabJointGuard {
         movement.scale(fraction);
         for (RigidBody part : assembly) translate(part, movement);
         return movement;
+    }
+
+    void pull(RigidBody grabbed, Vector3f error, int strength) {
+        List<RigidBody> assembly = bodies.isEmpty() ? List.of(grabbed) : bodies;
+        float mass = 0;
+        Vector3f velocity = new Vector3f();
+        for (RigidBody part : assembly) {
+            if (part.getInvMass() <= 0) continue;
+            float partMass = 1 / part.getInvMass();
+            velocity.scaleAdd(partMass, part.getLinearVelocity(new Vector3f()), velocity);
+            mass += partMass;
+        }
+        if (mass <= 0) return;
+        velocity.scale(1 / mass);
+        Vector3f force = TractionForce.calculate(error, velocity, mass, strength);
+        Vector3f travel = new Vector3f(velocity);
+        travel.scale(1F / 120);
+        travel.scaleAdd(1F / (mass * 120 * 120), force, travel);
+        if (!prepareSweep.test(assembly, travel)) return;
+        // Distribute one bounded external force by mass. A tiny hand must not receive the
+        // entire assembly's pulling impulse; existing rotations and joint freedom remain intact.
+        for (RigidBody part : assembly) {
+            if (part.getInvMass() <= 0) continue;
+            Vector3f impulse = new Vector3f(force);
+            impulse.scale(1 / (part.getInvMass() * mass * 120));
+            part.applyCentralImpulse(impulse);
+            part.activate(true);
+        }
     }
 
     void applyInertia(RigidBody grabbed, Vector3f velocityChange) {

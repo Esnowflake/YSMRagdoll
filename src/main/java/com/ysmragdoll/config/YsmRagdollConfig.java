@@ -20,6 +20,7 @@ public final class YsmRagdollConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_COLLISION_BOXES;
     public static final ForgeConfigSpec.BooleanValue INTENSIVE_TEST;
     public static final ForgeConfigSpec.BooleanValue GRAVITY_GUN_MODE;
+    public static final ForgeConfigSpec.IntValue TRACTION_STRENGTH;
     public static final ForgeConfigSpec.DoubleValue COLLISION_OFFSET_X;
     public static final ForgeConfigSpec.DoubleValue COLLISION_OFFSET_Y;
     public static final ForgeConfigSpec.DoubleValue COLLISION_OFFSET_Z;
@@ -78,6 +79,8 @@ public final class YsmRagdollConfig {
         builder.push("testing");
         GRAVITY_GUN_MODE = builder.comment("牵引模式：主手拿木棍，按住右键（使用键）牵引布娃娃，松开释放，滚轮调距。")
                 .define("gravityGunMode", false);
+        TRACTION_STRENGTH = builder.comment("牵引线力矩，0-100，默认70。0无法牵引；1-99使用有限牵引力；100刚性跟随、线条不变形。")
+                .defineInRange("tractionStrength", 70, 0, 100);
         builder.pop();
         SPEC = builder.build();
     }

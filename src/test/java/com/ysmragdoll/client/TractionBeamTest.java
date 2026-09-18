@@ -56,7 +56,7 @@ public class TractionBeamTest {
         Vec3 bend = Vec3.ZERO;
         for (int i = 1; i <= 60; i++) {
             Vec3 target = new Vec3(i * 0.1, 0, 0);
-            bend = beam.update(target, target, 1.0 / 60);
+            bend = beam.update(target, target.subtract(0.6, 0, 0), 1.0 / 60);
         }
         double movingBend = bend.length();
         Vec3 stopped = new Vec3(6, 0, 0);
@@ -89,7 +89,21 @@ public class TractionBeamTest {
         var beam = new TractionBeam();
         beam.update(new Vec3(-12, 0, 0), new Vec3(-12, 0, 0), 0);
         Vec3 fullTurn = new Vec3(12, 0, 0);
-        assertTrue(beam.update(fullTurn, fullTurn, 1.0 / 60).x > 0);
+        assertTrue(beam.update(fullTurn, new Vec3(10, 0, 0), 1.0 / 60).x > 0);
+    }
+
+    @Test
+    public void rigidBeamIsStraightAndStationaryAimStillBendsWhileBodyLags() {
+        var beam = new TractionBeam();
+        Vec3 target = new Vec3(1, 0, 6);
+        Vec3 anchor = new Vec3(0, 0, 6);
+        Vec3 bend = Vec3.ZERO;
+        for (int i = 0; i < 120; i++) bend = beam.update(target, anchor, 1.0 / 60, 70);
+        assertTrue(bend.x > 0.7);
+        assertEquals(Vec3.ZERO, beam.update(target, anchor, 1.0 / 60, 100));
+        assertEquals(Vec3.ZERO, beam.update(target, anchor, 1.0 / 60, 0));
+        beam.reset();
+        assertEquals(Vec3.ZERO, beam.update(target, target, 1.0 / 60, 70));
     }
 
     @Test
@@ -113,7 +127,7 @@ public class TractionBeamTest {
         Vec3 result = Vec3.ZERO;
         for (int i = 1; i <= fps; i++) {
             Vec3 target = new Vec3(6.0 * i / fps, 0, 0);
-            result = beam.update(target, target, 1.0 / fps);
+            result = beam.update(target, target.subtract(0.6, 0, 0), 1.0 / fps);
         }
         return result;
     }

@@ -80,12 +80,12 @@ public final class PhysicsRagdoll {
     private boolean inFluid;
 
     PhysicsGrab grab(RigidBody body, Vector3f hit) {
-        if (disposed || !chunkLoaded) return null;
+        if (disposed || !chunkLoaded || YsmRagdollConfig.TRACTION_STRENGTH.get() == 0) return null;
         if (grab != null) grab.close();
         pushLiftSuppressionSteps = 0;
         grab = new PhysicsGrab(body, hit, world::addConstraint, world::removeConstraint,
                 () -> !disposed && chunkLoaded, () -> world.currentWorldOffset(new Vector3f()),
-                world.grabJointGuard(constraints));
+                world.grabJointGuard(constraints), YsmRagdollConfig.TRACTION_STRENGTH.get());
         return grab;
     }
 

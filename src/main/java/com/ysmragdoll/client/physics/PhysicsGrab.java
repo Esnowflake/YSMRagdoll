@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 
 /** Point-driven grabbing with optional collision-aware joint repair after each physics step. */
 public final class PhysicsGrab implements AutoCloseable {
-    private static final float MAX_DRIVE_ERROR = 0.15F;
     private static final float STRAIN_LIMIT = 0.025F;
     private final RigidBody body;
     private final Point2PointConstraint constraint;
@@ -24,6 +23,8 @@ public final class PhysicsGrab implements AutoCloseable {
     private final GrabJointGuard jointGuard;
     private final Vector3f requestedPoint = new Vector3f();
     private final GrabInertia inertia = new GrabInertia();
+    private final int strength;
+    private final boolean constraintInstalled;
 
     PhysicsGrab(RigidBody body, Vector3f hit, Consumer<TypedConstraint> add,
                 Consumer<TypedConstraint> remove, BooleanSupplier valid, Supplier<Vector3f> offset) {
@@ -33,6 +34,13 @@ public final class PhysicsGrab implements AutoCloseable {
     PhysicsGrab(RigidBody body, Vector3f hit, Consumer<TypedConstraint> add,
                 Consumer<TypedConstraint> remove, BooleanSupplier valid, Supplier<Vector3f> offset,
                 GrabJointGuard jointGuard) {
+        this(body, hit, add, remove, valid, offset, jointGuard, 100);
+    }
+
+    PhysicsGrab(RigidBody body, Vector3f hit, Consumer<TypedConstraint> add,
+                Consumer<TypedConstraint> remove, BooleanSupplier valid, Supplier<Vector3f> offset,
+                GrabJointGuard jointGuard, int strength) {
+        this.strength = Math.max(0, Math.min(100, strength));
         this.jointGuard = jointGuard;
         this.body = body;
         this.remove = remove;
@@ -49,11 +57,14 @@ public final class PhysicsGrab implements AutoCloseable {
         constraint.setPivotB(hit);
         requestedPoint.set(hit);
         requestedPoint.sub(offset.get());
-        add.accept(constraint);
+        constraintInstalled = this.strength > 0 && (jointGuard == null || this.strength == 100);
+        if (constraintInstalled) add.accept(constraint);
         body.activate(true);
     }
 
-    public boolean isActive() { return !closed && valid.getAsBoolean(); }
+    public boolean isActive() { return !closed && strength > 0 && valid.getAsBoolean(); }
+
+    public int strength() { return strength; }
 
     public void moveTo(Vector3f worldPoint) {
         if (!isActive()) { close(); return; }
@@ -75,20 +86,19 @@ public final class PhysicsGrab implements AutoCloseable {
         Vector3f delta = new Vector3f(requestedPoint);
         delta.add(offset.get());
         delta.sub(current);
-        Vector3f movement = error < STRAIN_LIMIT ? jointGuard.follow(body, delta) : new Vector3f();
+        if (strength < 100) {
+            // No target teleport or hidden point-constraint motor in soft mode.
+            if (error < STRAIN_LIMIT) jointGuard.pull(body, delta, strength);
+            return;
+        }
+        Vector3f movement = error < STRAIN_LIMIT ? jointGuard.follow(body, delta, true) : new Vector3f();
         Vector3f feedback = inertia.step(movement);
         if (error < STRAIN_LIMIT) jointGuard.applyInertia(body, feedback);
         current.set(localAnchor);
         body.getWorldTransform(transform);
         transform.transform(current);
-        delta.set(requestedPoint);
-        delta.add(offset.get());
-        delta.sub(current);
-        // Bound just the driving error, without overwriting the assembly's velocities.
-        float allowance = Math.max(0.005F, MAX_DRIVE_ERROR * (1 - error / STRAIN_LIMIT));
-        float length = delta.length();
-        if (length > allowance) delta.scale(allowance / length);
-        current.add(delta);
+        // Anchor only at the position accepted by the assembly sweep. A residual motor
+        // toward an obstructed target would keep forcing the picked limb through the wall.
         constraint.setPivotB(current);
         // An obstructed joint takes priority over tracking the crosshair.
         constraint.setting.impulseClamp = error > STRAIN_LIMIT ? 0.05F : 1.0F;
@@ -96,7 +106,14 @@ public final class PhysicsGrab implements AutoCloseable {
     }
 
     void afterStep() {
-        if (isActive() && jointGuard != null) jointGuard.correct();
+        if (isActive() && jointGuard != null) {
+            jointGuard.correct();
+            if (strength == 100) {
+                Vector3f error = new Vector3f(requestedPoint);
+                error.sub(anchor());
+                jointGuard.follow(body, error, true);
+            }
+        }
     }
 
     public Vector3f anchor() {
@@ -111,13 +128,16 @@ public final class PhysicsGrab implements AutoCloseable {
     public void close() {
         if (closed) return;
         closed = true;
-        remove.accept(constraint);
+        if (constraintInstalled) remove.accept(constraint);
         body.activate(true);
     }
 
     /** Explicit use-key release only; closing a screen/world/invalid grab must not throw a corpse. */
     public void releaseWithInertia() {
-        if (isActive() && jointGuard != null) jointGuard.releaseWithVelocity(body, inertia.releaseVelocity());
+        if (isActive() && jointGuard != null) {
+            // Soft-mode velocities are already real: never add the same movement twice.
+            jointGuard.releaseWithVelocity(body, strength == 100 ? inertia.releaseVelocity() : new Vector3f());
+        }
         close();
     }
 }

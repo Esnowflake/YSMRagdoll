@@ -126,7 +126,7 @@ public final class GravityGunController {
         long now = System.nanoTime();
         double seconds = lastBeamNanos == 0 ? 0 : (now - lastBeamNanos) * 1.0E-9;
         lastBeamNanos = now;
-        Vec3 bend = beam.update(beamTarget == null ? to : beamTarget.add(renderOffset), to, seconds);
+        Vec3 bend = beam.update(beamTarget == null ? to : beamTarget.add(renderOffset), to, seconds, grab.strength());
         from = from.subtract(camera);
         to = to.subtract(camera);
         var view = mc.gameRenderer.getMainCamera();

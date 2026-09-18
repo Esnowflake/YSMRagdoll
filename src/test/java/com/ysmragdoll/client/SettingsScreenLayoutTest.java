@@ -71,6 +71,25 @@ public class SettingsScreenLayoutTest {
     }
 
     @Test
+    public void tractionStrengthValidatesRangeAndPreservesUnsavedEditsOnResize() throws Exception {
+        YsmRagdollSettingsScreen screen = screen(640, 360, 3);
+        EditBox input = (EditBox) field(screen.getClass(), "tractionStrength").get(screen);
+        assertEquals("70", input.getValue());
+        input.setValue("101");
+        assertEquals(false, invoke(screen, "captureVisibleValues"));
+        input.setValue("0");
+        assertEquals(true, invoke(screen, "captureVisibleValues"));
+        input.setValue("100");
+        assertEquals(true, invoke(screen, "captureVisibleValues"));
+        input.setValue("42");
+        invoke(screen, "clearWidgets", Screen.class);
+        screen.width = 320;
+        screen.init();
+        assertEquals("42", ((EditBox) field(screen.getClass(), "tractionStrength").get(screen)).getValue());
+        assertEquals("Editing must not save before Apply", 70, YsmRagdollConfig.TRACTION_STRENGTH.get().intValue());
+    }
+
+    @Test
     public void rebuildingForResizePreservesUnsubmittedText() throws Exception {
         YsmRagdollSettingsScreen screen = screen(640, 360, true);
         EditBox input = (EditBox) field(screen.getClass(), "easyPush").get(screen);
