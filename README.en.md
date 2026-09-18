@@ -25,7 +25,7 @@ The three-platform preview is `0.5.26-beta.1`; full in-game acceptance testing f
 Clients need **YSM 2.6.5** for the matching Minecraft version and loader. Fabric also requires **Fabric API**.
 There are no Forge 1.21.1 or NeoForge packages.
 
-Download **`-all.jar`**. Plain JARs and GitHub's Source code archives are not complete mod packages.
+Download **`-all.jar`** and put it in `mods`; do not double-click it. Plain JARs and GitHub's Source code archives are not complete mod packages.
 See the [Beta release notes and SHA-256 checksums](https://github.com/Esnowflake/YSMRagdoll/releases/tag/v0.5.26-beta.1) to verify your download.
 
 ## Installation and first use
@@ -53,7 +53,7 @@ may affect model capture. See the [user guide (中文)](docs/GUIDE.zh-CN.md).
 - [User guide (中文)](docs/GUIDE.zh-CN.md): settings, grabbing, logs and troubleshooting.
 - [Development and builds](docs/BUILDING.md): environment, three-platform builds and tests.
 - [Contributing](CONTRIBUTING.md): bug reports, branches and pull requests.
-- [Releasing](RELEASING.md): versions, tags, validation and release drafts.
+- [Releasing](docs/RELEASING.md): versions, tags, validation and release drafts.
 - [Documentation index](docs/README.md): technical references and other documentation.
 
 ## License and acknowledgements

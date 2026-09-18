@@ -1,6 +1,6 @@
 # 发布流程 / Releasing
 
-[首页](README.md) | [文档索引](docs/README.md) | [开发与构建](docs/BUILDING.md) | [更新日志](CHANGELOG.md)
+[首页](../README.md) | [文档索引](README.md) | [开发与构建](BUILDING.md) | [更新日志](../CHANGELOG.md)
 
 本文面向维护者。玩家安装包见 [GitHub Releases](https://github.com/Esnowflake/YSMRagdoll/releases)。
 
@@ -23,7 +23,7 @@ Fabric 仍为实验性移植；编译、单元测试及真实 YSM 类的 Mixin �
 1. 在发布分支更新根目录 `gradle.properties` 的 `mod_version`；Fabric 共用此版本。
 2. 将 `CHANGELOG.md` 的 `[Unreleased]` 内容归入 `## [版本号] - YYYY-MM-DD`，
    保留空的 `[Unreleased]` 供后续开发使用。每个发布版本至少有一条变更。
-3. 按[构建指南](docs/BUILDING.md)执行三平台构建、发布脚本测试及相关游戏内检查。
+3. 按[构建指南](BUILDING.md)执行三平台构建、发布脚本测试及相关游戏内检查。
 4. 提交 Pull Request，列出验证结果和未完成项；CI 通过并审查后合入 `main`。
 
 版本支持 `X.Y.Z`、`X.Y.Z-alpha.N`、`X.Y.Z-beta.N` 和 `X.Y.Z-rc.N`（N 从 1 开始）。
@@ -55,7 +55,7 @@ git push origin $tag
 
 ## 3. 检查自动构建与草稿
 
-[Release 工作流](.github/workflows/release.yml)从标签源码执行：
+[Release 工作流](../.github/workflows/release.yml)从标签源码执行：
 
 1. 校验版本与 changelog，下载并检查固定依赖的 SHA-256。
 2. 为三个目标运行 `clean build`，Fabric 额外执行 YSM 注入检查。
@@ -100,7 +100,8 @@ Get-FileHash -Algorithm SHA256 -LiteralPath '.\下载的安装包-all.jar'
 ## 文档与产物维护
 
 版本日志集中在 `CHANGELOG.md`，发行说明由对应章节生成。
-`releases/` 与 `release/` 保留早期历史说明和产物，不作为当前下载或构建输入。
+`release/` 保留早期历史产物，不作为当前下载或构建输入。
+临时发布记录保存在忽略的 `releases/` 或 `local-notes/` 中，公开历史以 GitHub Releases 为准。
 新的安装包通过 GitHub Releases 分发，不提交到源码目录。
 
 新增平台前必须完成实际移植、依赖固定、独立构建测试和游戏内验证，再扩展矩阵。
@@ -124,4 +125,5 @@ the public assets exist.
 
 Retries can resume matching drafts but cannot overwrite different assets or modify published releases.
 Never move public tags or silently replace packages; publish a new version for fixes.
-Historical `release/` and `releases/` files are not current build inputs.
+Historical `release/` files are not current build inputs. Local release notes belong in ignored
+`releases/` or `local-notes/`; public release history remains on GitHub Releases.

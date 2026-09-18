@@ -41,7 +41,7 @@ Fork 用户同步时从自己的 `upstream/main` 获取更新；不要强推共�
 ## 文档约定
 
 README 面向玩家，介绍功能、兼容性、下载与使用。开发环境放在 `docs/BUILDING.md`，
-技术契约放在 `docs/ARCHITECTURE.zh-CN.md`，发布操作放在 `RELEASING.md`，
+技术契约放在 `docs/ARCHITECTURE.zh-CN.md`，发布操作放在 `docs/RELEASING.md`，
 版本历史集中维护在 changelog 和 GitHub Releases。
 
 个人排查笔记和临时回退记录放在 Git 忽略的 `local-notes/` 中，不作为公共文档提交。
@@ -62,4 +62,4 @@ Keep both READMEs aligned, verify documentation links, and record user-visible c
 
 Keep logs, local notes, dependencies, player assets and credentials out of commits. Use ignored `local-notes/`
 for personal records; hidden filenames and unlinked documents in a public repository are still public.
-Versioning and releases follow the [release guide](RELEASING.md).
+Versioning and releases follow the [release guide](docs/RELEASING.md).

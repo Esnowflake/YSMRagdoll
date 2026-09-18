@@ -1,6 +1,6 @@
 # 开发与构建 / Building
 
-[首页](../README.md) | [文档索引](README.md) | [贡献指南](../CONTRIBUTING.md) | [发布流程](../RELEASING.md)
+[首页](../README.md) | [文档索引](README.md) | [贡献指南](../CONTRIBUTING.md) | [发布流程](RELEASING.md)
 
 ## 环境与目标 / Requirements
 
@@ -70,7 +70,7 @@ bash ./gradlew --no-daemon --project-dir fabric -Ptarget_mc=1.21.1 clean build
 
 `build` 包含单元测试。测试报告位于各目标输出目录上一级的 `reports/tests/test/index.html`。
 安装测试使用 `*-all.jar`；普通 JAR 不包含完整运行依赖。
-正式发行附件由发布工作流添加 Minecraft 和加载器标识，见[发布流程](../RELEASING.md)。
+正式发行附件由发布工作流添加 Minecraft 和加载器标识，见[发布流程](RELEASING.md)。
 
 ## Fabric Mixin 注入检查 / Injection checks
 
@@ -94,7 +94,7 @@ python scripts/release.py validate v0.5.26-beta.1
 ```
 
 示例标签对应当前 `gradle.properties` 的 `mod_version`；修改版本后同步替换标签，
-并在 changelog 中添加对应章节。完整打包与发布步骤见[发布流程](../RELEASING.md)。
+并在 changelog 中添加对应章节。完整打包与发布步骤见[发布流程](RELEASING.md)。
 
 ## 网络、缓存与 IDE / Network, caches and IDE
 
@@ -129,4 +129,4 @@ release tooling. Build and injection checks do not replace in-game testing.
 
 For proxy configuration, `build.ps1` reads environment settings before the Windows system proxy.
 Dependency download commands and IDE builds may need separate configuration.
-See [Releasing](../RELEASING.md) for tags, package verification and release drafts.
+See [Releasing](RELEASING.md) for tags, package verification and release drafts.

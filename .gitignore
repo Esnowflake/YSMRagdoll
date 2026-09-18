@@ -24,3 +24,6 @@ __pycache__/
 
 # Personal investigation and rollback notes are not public documentation.
 /local-notes/
+/docs/HISTORY.zh-CN.md
+/ROLLBACK.md
+/releases/
