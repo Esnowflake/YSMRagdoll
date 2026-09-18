@@ -1,7 +1,7 @@
 package com.ysmragdoll.client.physics;
 
 import javax.vecmath.Vector3f;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import static org.junit.Assert.*;
 
 public class GrabInertiaTest {

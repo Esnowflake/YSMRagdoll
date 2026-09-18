@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "ysmragdoll",
+  "version": "${modVersion}",
+  "name": "YSM Ragdoll",
+  "description": "Client-side ragdoll physics for YSM player models.",
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.ysmragdoll.OpenYsmRagdollMod"],
+    "client": ["com.ysmragdoll.client.ClientBootstrap"]
+  },
+  "mixins": ["ysmragdoll.fabric.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "fabric-api": "*",
+    "forgeconfigapiport": "*",
+    "minecraft": "${minecraftVersion}",
+    "java": ">=${javaVersion}"
+  },
+  "suggests": {
+    "yes_steve_model": ">=2.6.5 <2.6.6"
+  }
+}

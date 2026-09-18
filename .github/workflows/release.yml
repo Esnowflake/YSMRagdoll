@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  OPENYSM_VERSION: ysm-2.6.5-forge+mc1.20.1
+  OPENYSM_ASSET: ysm-2.6.5-forge+mc1.20.1-all.jar
+  OPENYSM_SHA256: 46eac038c314e7df1af80deea3c9e507f9f1e7ddf66b04eec455560dbfd51909
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: forge-1.20.1
+            java: "17"
+            args: ""
+            output: build
+          - target: fabric-1.20.1
+            java: "17"
+            args: "--project-dir fabric -Ptarget_mc=1.20.1 -Pysm_smoke=true"
+            output: fabric/build/1.20.1
+          - target: fabric-1.21.1
+            java: "21"
+            args: "--project-dir fabric -Ptarget_mc=1.21.1 -Pysm_smoke=true"
+            output: fabric/build/1.21.1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate release metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python -m unittest discover -s scripts -p 'test_*.py'
+          python scripts/release.py validate "$RELEASE_TAG"
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+          cache: gradle
+
+      - name: Download pinned OpenYSM dependency
+        run: |
+          set -euo pipefail
+          mkdir -p libs
+          curl --fail --location --retry 3 --connect-timeout 30 \
+            --output "libs/${OPENYSM_ASSET}" \
+            "https://github.com/OpenYSM/OpenYSM/releases/download/${OPENYSM_VERSION}/${OPENYSM_ASSET}"
+          echo "${OPENYSM_SHA256}  libs/${OPENYSM_ASSET}" | sha256sum --check
+          mv "libs/${OPENYSM_ASSET}" "libs/openysm-2.6.5-forge+mc1.20.1.jar"
+
+      - name: Download official YSM for compatibility tests only
+        if: startsWith(matrix.target, 'fabric-')
+        run: bash scripts/download-ysm.sh "${{ matrix.target }}"
+
+      - name: Build and verify tagged version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          bash ./gradlew --no-daemon ${{ matrix.args }} clean build
+          python scripts/release.py prepare "$RELEASE_TAG" --target "${{ matrix.target }}"
+
+      - name: Upload verified release bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.target }}
+          path: build/release/
+          if-no-files-found: error
+          overwrite: true
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-tests-${{ matrix.target }}-${{ github.run_id }}
+          path: ${{ matrix.output }}/reports/tests/test/
+          if-no-files-found: warn
+          overwrite: true
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: "*-1.*"
+          path: build/bundles
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Verify complete release matrix
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/release.py assemble "$RELEASE_TAG"
+
+      - name: Create or resume draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash scripts/publish-release.sh "$RELEASE_TAG" build/release

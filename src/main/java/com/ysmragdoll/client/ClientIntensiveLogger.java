@@ -70,7 +70,7 @@ final class ClientIntensiveLogger {
             StringBuilder line = new StringBuilder(512);
             line.append(OffsetDateTime.now()).append(" [INTENSIVE] sampleNanos=")
                     .append(sampleNanos).append(" fps=").append(minecraft.getFps())
-                    .append(" frameTime=").append(minecraft.getFrameTime())
+                    .append(" frameTime=").append(ClientVersion.partialTick())
                     .append(' ').append(ClientRagdollManager.intensiveState());
             Files.writeString(logFile, line.append(System.lineSeparator()).toString(),
                     StandardCharsets.UTF_8, StandardOpenOption.CREATE,

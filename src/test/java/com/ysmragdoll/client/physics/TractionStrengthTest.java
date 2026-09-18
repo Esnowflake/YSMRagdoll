@@ -15,7 +15,7 @@ import com.bulletphysics.linearmath.Transform;
 import javax.vecmath.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import static org.junit.Assert.*;
 
 public class TractionStrengthTest {

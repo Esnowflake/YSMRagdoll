@@ -11,7 +11,7 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.vecmath.Vector3f;
 import java.util.List;

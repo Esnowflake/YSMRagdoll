@@ -44,7 +44,8 @@ repositories {
 
 // OpenYSM 是本工程解析 YSM 二进制模型所需的编译期依赖。将 JAR 放在工程内部，
 // 可以保证 ZIP 解压后不依赖相邻目录；它不会被整体打入 ysmragdoll 成品。
-def openYsmJar = layout.projectDirectory.file('libs/openysm-2.6.5-forge+mc1.20.1.jar').asFile
+def openYsmJar = file(findProperty('openysm_jar')
+        ?: 'libs/openysm-2.6.5-forge+mc1.20.1.jar')
 if (!openYsmJar.isFile()) {
     throw new GradleException("缺少构建依赖: ${openYsmJar}. 请重新解压完整的 ysmragdoll 工程包。")
 }
@@ -61,6 +62,8 @@ dependencies {
     }
     implementation 'javax.vecmath:vecmath:1.5.2'
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
     jarJar(group: 'cz.advel.jbullet', name: 'jbullet', version: '[20101010-1]') {
         transitive = false
     }
@@ -122,6 +125,15 @@ jar {
 }
 
 jar.finalizedBy('reobfJar')
+
+test {
+    useJUnitPlatform()
+    afterSuite { descriptor, result ->
+        if (!descriptor.parent && result.testCount == 0) {
+            throw new GradleException('No tests executed')
+        }
+    }
+}
 
 tasks.named('build').configure {
     dependsOn tasks.named('reobfJarJar')

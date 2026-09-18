@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /** 左侧分类导航、右侧设置内容的单页配置界面。 */
-public final class YsmRagdollSettingsScreen extends Screen {
+public final class YsmRagdollSettingsScreen extends VersionedScreen {
     private static final int PANEL_COLOR = 0xE8101114;
     private static final int NAVIGATION_COLOR = 0xD9181A1F;
     private static final int CONTENT_COLOR = 0xC8141519;
@@ -252,14 +252,10 @@ public final class YsmRagdollSettingsScreen extends Screen {
     private int checkbox(String key, int x, int y, int availableWidth, boolean selected,
                          java.util.function.Consumer<Boolean> changed) {
         int bottom = label(key, x + 28, y + 5, availableWidth - 28);
-        Checkbox box = new Checkbox(x, 0, 20, 20, Component.translatable(key), selected, false) {
-            @Override
-            public void onPress() {
-                super.onPress();
-                changed.accept(selected());
-                clearStatus();
-            }
-        };
+        Checkbox box = ClientVersion.checkbox(font, x, Component.translatable(key), selected, value -> {
+            changed.accept(value);
+            clearStatus();
+        });
         contentWidget(box, y);
         return Math.max(y + 20, bottom) + 14;
     }
@@ -355,14 +351,14 @@ public final class YsmRagdollSettingsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    protected boolean scrollContent(double mouseX, double mouseY, double delta) {
         if (mouseX >= contentLeft && mouseX <= panelLeft + panelWidth
                 && mouseY >= contentTop && mouseY <= contentBottom) {
             scroll -= (int) (delta * 24);
             positionContent();
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return false;
     }
 
     @Override
@@ -589,7 +585,7 @@ public final class YsmRagdollSettingsScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        ClientVersion.background(this, graphics, mouseX, mouseY, partialTick);
         graphics.fill(panelLeft, panelTop, panelLeft + panelWidth, panelTop + panelHeight,
                 PANEL_COLOR);
         graphics.fill(panelLeft, panelTop + 38, panelLeft + navigationWidth,

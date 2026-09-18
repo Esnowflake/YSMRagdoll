@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  OPENYSM_VERSION: ysm-2.6.5-forge+mc1.20.1
+  OPENYSM_ASSET: ysm-2.6.5-forge+mc1.20.1-all.jar
+  OPENYSM_SHA256: 46eac038c314e7df1af80deea3c9e507f9f1e7ddf66b04eec455560dbfd51909
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: forge-1.20.1
+            java: "17"
+            args: ""
+            output: build
+          - target: fabric-1.20.1
+            java: "17"
+            args: "--project-dir fabric -Ptarget_mc=1.20.1 -Pysm_smoke=true"
+            output: fabric/build/1.20.1
+          - target: fabric-1.21.1
+            java: "21"
+            args: "--project-dir fabric -Ptarget_mc=1.21.1 -Pysm_smoke=true"
+            output: fabric/build/1.21.1
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+          cache: gradle
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate release tooling
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+
+      - name: Download pinned OpenYSM dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p libs
+          curl --fail --location --retry 3 --connect-timeout 30 \
+            --output "libs/${OPENYSM_ASSET}" \
+            "https://github.com/OpenYSM/OpenYSM/releases/download/${OPENYSM_VERSION}/${OPENYSM_ASSET}"
+          echo "${OPENYSM_SHA256}  libs/${OPENYSM_ASSET}" | sha256sum --check
+          mv "libs/${OPENYSM_ASSET}" "libs/openysm-2.6.5-forge+mc1.20.1.jar"
+
+      - name: Download official YSM for compatibility tests only
+        if: startsWith(matrix.target, 'fabric-')
+        run: bash scripts/download-ysm.sh "${{ matrix.target }}"
+
+      - name: Run tests and build
+        run: bash ./gradlew --no-daemon ${{ matrix.args }} clean build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ysmragdoll-${{ matrix.target }}-${{ github.sha }}
+          path: ${{ matrix.output }}/libs/*-all.jar
+          if-no-files-found: error
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-reports-${{ matrix.target }}-${{ github.sha }}
+          path: ${{ matrix.output }}/reports/tests/test/
+          if-no-files-found: warn

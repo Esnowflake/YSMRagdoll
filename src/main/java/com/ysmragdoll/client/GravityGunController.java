@@ -143,12 +143,8 @@ public final class GravityGunController {
             Vec3 next = curve.point(t);
             Vec3 normal = next.subtract(previous).normalize();
             if (normal.lengthSqr() > 1.0E-8) {
-                consumer.vertex(pose.pose(), (float) previous.x, (float) previous.y, (float) previous.z)
-                        .color(51, 255, 204, 255)
-                        .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z).endVertex();
-                consumer.vertex(pose.pose(), (float) next.x, (float) next.y, (float) next.z)
-                        .color(51, 255, 204, 255)
-                        .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z).endVertex();
+                ClientVersion.lineVertex(consumer, pose, previous, normal);
+                ClientVersion.lineVertex(consumer, pose, next, normal);
             }
             previous = next;
         }

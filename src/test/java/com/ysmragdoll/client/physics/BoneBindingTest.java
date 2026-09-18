@@ -8,7 +8,7 @@ import com.ysmragdoll.config.YsmRagdollConfig;
 import com.ysmragdoll.network.PlayerDeathSnapshot;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

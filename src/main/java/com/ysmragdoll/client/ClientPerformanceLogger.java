@@ -2,13 +2,10 @@ package com.ysmragdoll.client;
 
 import com.ysmragdoll.YsmRagdollLog;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Locale;
 
 /** 低频汇总客户端帧率和本模组渲染耗时，供后续性能优化对比。 */
-@OnlyIn(Dist.CLIENT)
 final class ClientPerformanceLogger {
     private static final long WINDOW_NANOS = 10_000_000_000L;
 

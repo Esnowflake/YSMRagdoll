@@ -20,8 +20,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import javax.vecmath.Vector3f;
 import java.lang.reflect.Field;
 import static org.junit.Assert.*;
@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 public class FluidBuoyancyTest {
     private static final float STEP = 1F / 120;
 
-    @BeforeClass
+    @BeforeAll
     public static void bootstrap() throws Exception {
         SharedConstants.tryDetectVersion();
         // Same registry-only bootstrap as BlockCollisionCacheTest; no Forge transformer in plain JUnit.

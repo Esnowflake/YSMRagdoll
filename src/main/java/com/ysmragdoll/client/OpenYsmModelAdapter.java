@@ -11,10 +11,7 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.fml.ModList;
+import com.ysmragdoll.platform.YsmPlatform;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
@@ -35,12 +32,11 @@ import java.util.UUID;
  * 必须在死亡时复制。快照完成后直接调用 YSM 的底层网格方法，不再执行玩家的
  * capability、动画控制器或 {@code tickModel()}。
  */
-@OnlyIn(Dist.CLIENT)
 public final class OpenYsmModelAdapter {
     private static final String YSM_RENDERER_REGISTRY =
-            "com.elfmcys.yesstevemodel.OOoO00ooO00OOO00O0o0000O";
+            YsmPlatform.RENDERER_REGISTRY;
     private static final String YSM_MESH_RENDERER =
-            "com.elfmcys.yesstevemodel.ooOOo000OOO0ooO0oo0ooooO";
+            YsmPlatform.MESH_RENDERER;
     private static final int CAPTURE_LIGHT = 0x00F000F0;
 
     private static final ThreadLocal<CaptureContext> ACTIVE_CAPTURE = new ThreadLocal<>();
@@ -61,7 +57,7 @@ public final class OpenYsmModelAdapter {
     }
 
     public static Optional<CapturedModel> capture(Player player, double x, double y, double z, float yaw) {
-        if (!ModList.get().isLoaded("yes_steve_model")) {
+        if (!YsmPlatform.loaded()) {
             YsmRagdollLog.warn("未加载 yes_steve_model，无法捕获死亡模型");
             return Optional.empty();
         }
@@ -72,7 +68,7 @@ public final class OpenYsmModelAdapter {
         // 不能等到下一帧，因为本地玩家复活时旧实体可能已从客户端世界移除并使 capability 失效。
         PoseStack capturePose = new PoseStack();
         boolean captured = captureFromPlayer(model, player, x, y, z, yaw,
-                Minecraft.getInstance().getFrameTime(), capturePose, DISCARDING_BUFFERS,
+                ClientVersion.partialTick(), capturePose, DISCARDING_BUFFERS,
                 CAPTURE_LIGHT, true);
         if (captured) {
             YsmRagdollLog.info("已在死亡事件线程立即冻结 YSM 模型，不再等待下一帧玩家实体: "
@@ -98,7 +94,7 @@ public final class OpenYsmModelAdapter {
         }
         PoseStack capturePose = new PoseStack();
         boolean captured = captureFromPlayer(model, player, x, y, z, yaw,
-                Minecraft.getInstance().getFrameTime(), capturePose, DISCARDING_BUFFERS,
+                ClientVersion.partialTick(), capturePose, DISCARDING_BUFFERS,
                 CAPTURE_LIGHT, true);
         if (captured) {
             YsmRagdollLog.info("有限重试已取得独立 YSM 快照: 玩家=" + model.playerId);
@@ -156,15 +152,7 @@ public final class OpenYsmModelAdapter {
                 continue;
             }
             try {
-                Class<?> provider = Class.forName(
-                        "com.elfmcys.yesstevemodel.O0OooOo0oOOoOoOoOooO000o", false, loader);
-                Field capabilityField = provider.getDeclaredField("Oo0Oo0o00O00Oo0OOoOOoooo");
-                capabilityField.setAccessible(true);
-                Object handle = capabilityField.get(null);
-                if (!(handle instanceof Capability capability)) {
-                    continue;
-                }
-                Object value = player.getCapability(capability).resolve().orElse(null);
+                Object value = YsmPlatform.modelState(player, loader);
                 if (value == null) {
                     continue;
                 }
@@ -616,51 +604,6 @@ public final class OpenYsmModelAdapter {
             this.basePose = new Matrix4f(pose.pose());
             this.baseNormal = new Matrix3f(pose.normal());
             this.suppressMeshDrawing = suppressMeshDrawing;
-        }
-    }
-
-    /** 捕获时接收并丢弃 YSM 附加层产生的顶点，避免辅助绘制进入任何游戏渲染缓冲。 */
-    private static final class DiscardingVertexConsumer implements VertexConsumer {
-        @Override
-        public VertexConsumer vertex(double x, double y, double z) {
-            return this;
-        }
-
-        @Override
-        public VertexConsumer color(int red, int green, int blue, int alpha) {
-            return this;
-        }
-
-        @Override
-        public VertexConsumer uv(float u, float v) {
-            return this;
-        }
-
-        @Override
-        public VertexConsumer overlayCoords(int u, int v) {
-            return this;
-        }
-
-        @Override
-        public VertexConsumer uv2(int u, int v) {
-            return this;
-        }
-
-        @Override
-        public VertexConsumer normal(float x, float y, float z) {
-            return this;
-        }
-
-        @Override
-        public void endVertex() {
-        }
-
-        @Override
-        public void defaultColor(int red, int green, int blue, int alpha) {
-        }
-
-        @Override
-        public void unsetDefaultColor() {
         }
     }
 

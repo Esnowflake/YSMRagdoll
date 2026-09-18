@@ -10,7 +10,7 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import javax.vecmath.Vector3f;
 import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.*;

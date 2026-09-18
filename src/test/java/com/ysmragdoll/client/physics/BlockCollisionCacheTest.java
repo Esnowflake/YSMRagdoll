@@ -20,8 +20,8 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import javax.vecmath.Vector3f;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -31,7 +31,7 @@ public class BlockCollisionCacheTest {
     private ClientPhysicsWorld physics;
     private BlockCollisionCache cache;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         SharedConstants.tryDetectVersion();
         // Plain JUnit has no Forge event-bus bytecode transformer. Only enable vanilla

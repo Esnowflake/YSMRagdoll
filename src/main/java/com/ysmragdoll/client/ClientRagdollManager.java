@@ -18,8 +18,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -37,7 +35,6 @@ import java.util.Map;
  * 布娃娃启用物理时存在。数量上限、存在时间、手动清除、世界卸载和资源重载最终
  * 都通过这里释放约束和刚体，避免跨世界保留 YSM 的旧 GPU 资源。</p>
  */
-@OnlyIn(Dist.CLIENT)
 public final class ClientRagdollManager {
     private static final Deque<StaticRagdoll> RAGDOLLS = new ArrayDeque<>();
     private static final Deque<PendingRagdoll> PENDING = new ArrayDeque<>();

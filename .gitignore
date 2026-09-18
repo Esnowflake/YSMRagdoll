@@ -1,4 +1,10 @@
 .gradle/
+.gradle-home/
+.jdks/
+.tmp/
+gradle.local.properties
+/PipeProbe.class
+/javac.*.args
 build/
 run/
 out/
@@ -14,3 +20,4 @@ logs/
 Ragdoll/
 114514.txt
 libs/
+__pycache__/
