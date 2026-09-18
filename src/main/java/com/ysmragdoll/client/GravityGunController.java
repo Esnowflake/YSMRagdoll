@@ -129,20 +129,25 @@ public final class GravityGunController {
         Vec3 bend = beam.update(beamTarget == null ? to : beamTarget.add(renderOffset), to, seconds);
         from = from.subtract(camera);
         to = to.subtract(camera);
+        var view = mc.gameRenderer.getMainCamera();
+        var look = view.getLookVector();
+        var cameraUp = view.getUpVector();
+        var curve = TractionBeam.curve(from, to, bend,
+                new Vec3(look.x(), look.y(), look.z()),
+                new Vec3(cameraUp.x(), cameraUp.y(), cameraUp.z()));
         var consumer = buffers.getBuffer(RenderType.lines());
         var pose = stack.last();
         Vec3 previous = from;
-        for (int i = 1; i <= 24; i++) {
-            double t = i / 24.0;
-            Vec3 next = TractionBeam.point(from, to, bend, t);
+        for (int i = 1; i <= 32; i++) {
+            double t = i / 32.0;
+            Vec3 next = curve.point(t);
             Vec3 normal = next.subtract(previous).normalize();
             if (normal.lengthSqr() > 1.0E-8) {
-                float before = (i - 1) / 24F;
                 consumer.vertex(pose.pose(), (float) previous.x, (float) previous.y, (float) previous.z)
-                        .color(0.2F + 0.2F * before, 0.65F + 0.2F * before, 1.0F, 0.95F)
+                        .color(51, 255, 204, 255)
                         .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z).endVertex();
                 consumer.vertex(pose.pose(), (float) next.x, (float) next.y, (float) next.z)
-                        .color(0.2F + 0.2F * (float) t, 0.65F + 0.2F * (float) t, 1.0F, 0.95F)
+                        .color(51, 255, 204, 255)
                         .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z).endVertex();
             }
             previous = next;

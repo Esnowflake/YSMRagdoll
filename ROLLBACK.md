@@ -2,6 +2,10 @@
 
 ## 当前本地修订：0.5.25 柔性牵引线
 
+平滑圆弧修订：改用连续单段曲线，限制屏幕投影中的末端翘起与回折，延长停止后的回直过程，
+颜色改为 `#33FFCC`。物理行为不变。本轮回退标签：`baseline-before-smooth-beam-arc-0.5.25`；
+安装包备份：`E:\YSM Ragdoll\backups\ysmragdoll-before-smooth-beam-arc\ysmragdoll-0.5.25-all.jar`。
+
 方向修正：曲线改为朝牵引方向弯曲，再接回实际抓取点。
 修正前标签：`baseline-before-beam-direction-fix-0.5.25`；修正前安装包：
 `E:\YSM Ragdoll\backups\ysmragdoll-before-beam-direction-fix\ysmragdoll-0.5.25-all.jar`。
