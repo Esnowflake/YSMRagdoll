@@ -1,88 +1,65 @@
-# 团队协作 / Contributing
+# 贡献指南 / Contributing
 
-[简体中文首页](README.md) | [English home](README.en.md)
+[首页](README.md) | [文档索引](docs/README.md) | [开发与构建](docs/BUILDING.md)
 
-## Collaborator 与 Fork 的区别
+欢迎提交问题报告、文档改进和代码修复。涉及新平台、大幅调整物理行为或模型适配时，请先通过
+[Issue](https://github.com/Esnowflake/YSMRagdoll/issues)说明目标和兼容范围。
 
-你是原仓库的 Collaborator，有权限向允许写入的分支推送。
-作者和你使用同一个远端仓库，不需要额外创建 Fork 来“同步原作者”。
-`origin/main` 是你上次获取到的远端主分支记录，`main` 是本地主分支。
-作者推送不会自动改动你的本地文件；`git fetch` 只更新远端记录。
-自动化构建使用独立的 GitHub Actions 工作流；协作分支仍以本仓库为准。
+## 问题反馈
 
-## 推荐日常流程
+请提供 Minecraft、加载器、YSM 和本模组的版本，复现步骤、预期与实际表现，以及相关日志。
+渲染或物理问题可附截图、视频和模型骨骼特征；提交模型文件前请确认作者允许分享。
+日志位置与排查步骤见[使用指南](docs/GUIDE.zh-CN.md)。分享前请移除日志中的个人路径、服务器地址等无关信息。
 
-先提交当前改动到自己的功能分支，或在切换前明确保存它们。
-以下命令假设工作区干净；不要强制覆盖未提交改动。
+## 开发流程
+
+外部贡献者先 Fork 仓库，再从自己的副本创建分支；有仓库写权限的协作者可以直接推送功能分支。
+以下命令在工作区干净且本地 `main` 跟踪本仓库时使用：
 
 ```sh
 git switch main
-git fetch origin
-git pull --ff-only origin main
-git switch -c codex/my-change
-# edit and test
+git pull --ff-only
+git switch -c docs/your-change
+# 修改文件并执行相应检查
 git add <changed-files>
 git diff --cached
 git commit -m "Describe the change"
-git push -u origin codex/my-change
-# open a pull request targeting Esnowflake/YSMRagdoll:main
+git push -u origin docs/your-change
 ```
 
-`--ff-only` 只允许本地主分支直接向前移动；双方各自有提交时会停止，
-不会悄悄制造合并。尽量不要直接在本地 `main` 开发。
+向 `Esnowflake/YSMRagdoll:main` 发起 Pull Request，说明解决的问题、行为变化和验证结果。
+Fork 用户同步时从自己的 `upstream/main` 获取更新；不要强推共享分支或覆盖其他人的工作。
 
-## 作者在你开发时更新了主分支
+## 提交前检查
 
-在自己的功能分支、工作区干净时执行：
+- 按[构建指南](docs/BUILDING.md)验证受影响的平台；共享物理或渲染改动应覆盖全部三个目标。
+- 单元测试和 Mixin 注入检查不能替代游戏内验证。说明已测试的模型、单人/多人场景及尚未验证的部分。
+- 文档改动检查相对链接、版本和命令；调整首页时同步更新中英文 README。
+- 用户可见变化写入 [CHANGELOG.md](CHANGELOG.md) 的 `[Unreleased]`；不要自行移动已发布标签。
+- 不提交运行日志、编译参数转储、个人路径、缓存、下载的依赖、玩家资源或访问凭据。
 
-```sh
-git fetch origin
-git merge origin/main
-# resolve conflicts and test
-git push
-```
+## 文档约定
 
-Merge 保留双方提交历史，适合已经推送、可能被别人使用的分支。
-Rebase 可整理仅自己使用的未共享提交，但会重写提交 ID；不要擅自 rebase
-共享主分支，也不要用 `git push --force` 覆盖作者工作。
+README 面向玩家，介绍功能、兼容性、下载与使用。开发环境放在 `docs/BUILDING.md`，
+技术契约放在 `docs/ARCHITECTURE.zh-CN.md`，发布操作放在 `RELEASING.md`，
+版本历史集中维护在 changelog 和 GitHub Releases。
 
-## 冲突不等于丢失代码
+个人排查笔记和临时回退记录放在 Git 忽略的 `local-notes/` 中，不作为公共文档提交。
+公开仓库内的文件即使以点开头或不在 README 中链接，仍然公开可见；
+忽略规则也不会删除已经存在的提交历史。
 
-不同文件通常可自动合并；同一处被双方修改、删除与修改相遇时可能冲突。
-即使没有文本冲突，也可能有逻辑冲突，因此必须重新测试。
+## English
 
-1. `git status` 查看冲突文件。
-2. 编辑 `<<<<<<<`、`=======`、`>>>>>>>` 区域，保留正确的组合逻辑。
-3. `git add <resolved-files>`，运行测试，再 `git commit` 完成合并。
-4. 要取消本次合并，可执行 `git merge --abort`；不要硬重置丢弃改动。
+Bug reports should include Minecraft, loader, YSM and mod versions, reproduction steps, expected and actual
+behavior, and relevant logs. Remove unrelated personal information and only share models you are allowed to distribute.
 
-## 能自动同步吗
+External contributors can fork; collaborators can use a feature branch in this repository. Open a pull request
+against `main` describing the problem, changes and verification. Do not force-push shared branches.
 
-- 自动 fetch：可以让 IDE 定期检查作者的新提交，不修改你的工作文件。
-- 自动 pull/merge：不建议对正在开发的工作区开启，可能冲突或破坏当前状态。
-- PR 自动合并：管理员允许并配置必要检查、审查规则后，可在通过后自动合并；
-  不等于自动替你解决冲突。
-- 定时覆盖分支：不建议，会掩盖冲突和覆盖开发意图。
+Follow the [build guide](docs/BUILDING.md) and test affected platforms. Shared physics or rendering changes
+should cover all three targets. Report in-game testing separately from unit and injection checks.
+Keep both READMEs aligned, verify documentation links, and record user-visible changes under `[Unreleased]`.
 
-建议管理员保护 `main`：要求 PR、至少一人审查、CI 成功，禁止强推和删除。
-写权限不等于管理员权限，Collaborator 未必能修改这些规则。
-
-## 更新日志与版本
-
-日常用户可见改动写入 `CHANGELOG.md` 的 `[Unreleased]`。
-发布时归入新版本章节并更新 `gradle.properties`；不要改写已发布标签。
-历史 `releases/` 文档保留，新发布以 changelog 为唯一日志输入。
-详见 [发布流程](RELEASING.md)。
-
-## English Summary
-
-Collaborators work against the same upstream; a fork is optional.
-Fetch updates remote-tracking references without touching your files.
-On clean local `main`, run `git pull --ff-only origin main`, then create a feature
-branch and open a PR. To bring upstream changes into a shared feature branch,
-run `git fetch origin` and `git merge origin/main`, resolve conflicts, test and
-push. Do not force-push shared history.
-
-Automatic fetch is appropriate for checking updates. Unattended pull/merge does
-not replace conflict resolution or testing. Administrators can require CI and
-review and may enable PR auto-merge. Keep changes in `[Unreleased]` until release.
+Keep logs, local notes, dependencies, player assets and credentials out of commits. Use ignored `local-notes/`
+for personal records; hidden filenames and unlinked documents in a public repository are still public.
+Versioning and releases follow the [release guide](RELEASING.md).

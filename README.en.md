@@ -2,48 +2,64 @@
 
 [简体中文](README.md) | **English**
 
-A Minecraft ragdoll physics mod for Yes Steve Model (YSM). On player death, the
-client captures the loaded YSM mesh, textures and bone pose, then simulates an
-independent ragdoll with JBullet. Features include block collisions, joint limits,
-player pushing, explosion impulses, buoyancy and stick-based grabbing.
+Turn YSM player models into physical ragdolls that collide, react and can be grabbed after death.
 
-## Downloads And Compatibility
+YSM Ragdoll is a Minecraft mod for Yes Steve Model (YSM). It captures the model and pose at death,
+then simulates joints, terrain collisions, explosion impulses and buoyancy on the client.
+You can also create local test ragdolls from the settings screen.
 
-Download the **`-all.jar`** from
-[GitHub Releases](https://github.com/Esnowflake/YSMRagdoll/releases).
-The plain JAR and source archives are not complete installation packages.
+[Downloads](https://github.com/Esnowflake/YSMRagdoll/releases) · [User guide (中文)](docs/GUIDE.zh-CN.md) · [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/Esnowflake/YSMRagdoll/issues)
 
-| Minecraft | Loader | Java | Status | Download |
+## Downloads and compatibility
+
+**Forge 1.20.1 players can use stable 0.5.26. Fabric players should select the Beta package for their Minecraft version.**
+The three-platform preview is `0.5.26-beta.1`; full in-game acceptance testing for Fabric is still pending.
+
+| Version | Minecraft | Loader | Java | Download |
 | --- | --- | --- | --- | --- |
-| 1.20.1 | Forge 47.4.x | 17 | Beta | [Download JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.20.1-forge-all.jar) |
-| 1.20.1 | Fabric | 17 | Beta | [Download JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.20.1-fabric-all.jar) |
-| 1.21.1 | Fabric | 21 | Beta | [Download JAR](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.21.1-fabric-all.jar) |
+| **0.5.26 Stable** | 1.20.1 | Forge 47.4.x | 17 | [Forge package](https://github.com/Esnowflake/YSMRagdoll/releases/download/0.5.26/ysmragdoll-0.5.26-all.jar) |
+| 0.5.26-beta.1 Beta | 1.20.1 | Forge 47.4.x | 17 | [Forge Beta](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.20.1-forge-all.jar) |
+| 0.5.26-beta.1 Beta | 1.20.1 | Fabric Loader ≥ 0.16.14 | 17 | [Fabric 1.20.1 Beta](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.20.1-fabric-all.jar) |
+| 0.5.26-beta.1 Beta | 1.21.1 | Fabric Loader ≥ 0.16.14 | 21 | [Fabric 1.21.1 Beta](https://github.com/Esnowflake/YSMRagdoll/releases/download/v0.5.26-beta.1/ysmragdoll-0.5.26-beta.1%2Bmc1.21.1-fabric-all.jar) |
 
-## Installation And Use
+Clients need **YSM 2.6.5** for the matching Minecraft version and loader. Fabric also requires **Fabric API**.
+There are no Forge 1.21.1 or NeoForge packages.
 
-1. Close Minecraft and install the matching mod package and YSM 2.6.5 in your
-   instance's `mods` directory. Fabric also requires Fabric API.
-2. Configure your own YSM model resources. Keep only one YSM Ragdoll version.
-3. Assign the settings hotkey in Minecraft's controls; it is unbound by default.
-4. Death creates a ragdoll in single-player. Advanced settings can also create
-   local test ragdolls.
-5. Enable grabbing in the Testing category, hold a stick in the main hand,
-   hold right-click to grab, release to let go, and scroll to adjust distance.
+Download **`-all.jar`**. Plain JARs and GitHub's Source code archives are not complete mod packages.
+See the [Beta release notes and SHA-256 checksums](https://github.com/Esnowflake/YSMRagdoll/releases/tag/v0.5.26-beta.1) to verify your download.
 
-For multiplayer death snapshots, the server must also install this mod.
-Clients without it can still join but cannot see ragdolls. Client-only
-installations can create local test ragdolls manually.
-Physics is a client-side visual effect, not a server-authoritative entity, and
-ragdolls are not saved across worlds.
+## Installation and first use
 
-## More Information
+1. Close Minecraft. Put the matching package and required dependencies in your instance's `mods` folder. Remove older YSM Ragdoll versions.
+2. Start the game and confirm your YSM model loads correctly.
+3. Assign the YSM Ragdoll settings key in Minecraft's controls; it is unbound by default.
+4. Death creates a ragdoll in single-player. You can also create a local test ragdoll in the Advanced settings.
+5. Enable grabbing in the Testing category, hold a stick in your main hand, aim at a ragdoll and hold right-click. Release to let go; scroll to adjust distance.
 
-- [Changelog](CHANGELOG.md)
-- [Troubleshooting and technical guide](docs/GUIDE.zh-CN.md)
+By default, up to **2** ragdolls remain for **20 seconds** each. Settings control their count, lifetime, physics and removal.
 
-## License
+## Multiplayer and limitations
 
-[MIT](LICENSE). Extracted OpenYSM parser classes retain their
-[MIT license](licenses/OpenYSM-LICENSE.txt). Packages include JBullet and vecmath.
-Minecraft, the complete YSM mod and player model resources are not bundled.
+The server needs a matching version of this mod to broadcast deaths. Clients with this mod and YSM
+create ragdolls from their locally loaded models. Clients without the mod can still join but do not see
+ragdolls. Client-only installations can create local test ragdolls manually.
+
+Each client simulates physics independently, so poses may differ. Ragdolls are visual effects, do not participate
+in server damage or entity logic, and are not saved across worlds. Unusual skeletons or YSM version changes
+may affect model capture. See the [user guide (中文)](docs/GUIDE.zh-CN.md).
+
+## Documentation and contributing
+
+- [User guide (中文)](docs/GUIDE.zh-CN.md): settings, grabbing, logs and troubleshooting.
+- [Development and builds](docs/BUILDING.md): environment, three-platform builds and tests.
+- [Contributing](CONTRIBUTING.md): bug reports, branches and pull requests.
+- [Releasing](RELEASING.md): versions, tags, validation and release drafts.
+- [Documentation index](docs/README.md): technical references and other documentation.
+
+## License and acknowledgements
+
+This project is licensed under [MIT](LICENSE). Selected OpenYSM model parser code retains its
+[MIT license](licenses/OpenYSM-LICENSE.txt). Physics uses JBullet and vecmath.
+
+Packages do not include Minecraft, the complete YSM mod, or player models, textures and animations.
 Player resources remain subject to their authors' licenses.

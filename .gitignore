@@ -21,3 +21,6 @@ Ragdoll/
 114514.txt
 libs/
 __pycache__/
+
+# Personal investigation and rollback notes are not public documentation.
+/local-notes/

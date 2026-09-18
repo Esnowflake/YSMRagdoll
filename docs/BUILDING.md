@@ -1,107 +1,132 @@
-# Building / 本地构建
+# 开发与构建 / Building
 
-[中文](../README.md) | [English](../README.en.md)
+[首页](../README.md) | [文档索引](README.md) | [贡献指南](../CONTRIBUTING.md) | [发布流程](../RELEASING.md)
 
-## Requirements / 前置条件
+## 环境与目标 / Requirements
 
-- Minecraft 1.20.1 Forge source requires JDK 17 for compilation.
-- The wrapper downloads Gradle 8.14.3 and checks its pinned SHA-256.
-- OpenYSM is compile-only; selected parser classes are extracted with their MIT license.
-- Internet access is required on the first build. Use your system proxy where needed.
+安装 Git、**JDK 21 和 JDK 17**。统一使用 JDK 21 运行 Gradle，
+1.20.1 的编译工具链为 JDK 17，1.21.1 为 JDK 21。
+项目自带 Gradle Wrapper 8.14.3，无需安装全局 Gradle。首次构建需要网络下载依赖。
+发布脚本另需 Python 3.11+；Fabric 注入检查脚本需要 Bash（Windows 可使用 Git Bash）。
 
-## OpenYSM Dependency / 编译依赖
+| 目标 / Target | Gradle 工程 | 编译 JDK | 输出目录 |
+| --- | --- | --- | --- |
+| Forge 1.20.1 | 仓库根目录 | 17 | `build/libs/` |
+| Fabric 1.20.1 | `fabric/`，`target_mc=1.20.1` | 17 | `fabric/build/1.20.1/libs/` |
+| Fabric 1.21.1 | `fabric/`，`target_mc=1.21.1` | 21 | `fabric/build/1.21.1/libs/` |
 
-Run from the repository root in PowerShell. The URL and checksum are pinned;
-the JAR is saved under `libs/` on the project drive, never committed.
+以下命令均从仓库根目录执行。请确认 `JAVA_HOME` 指向自己的 JDK 21 安装目录；
+JDK 17 应能被 Gradle toolchain 发现，必要时用
+`--project-prop org.gradle.java.installations.paths=<JDK17目录>` 指定位置。
+
+## 准备 OpenYSM 编译依赖 / Parser dependency
+
+三个目标共享以下固定依赖。构建只提取所需解析类并保留许可，不将完整 OpenYSM 模组打入发行包。
+下载地址和 SHA-256 与 CI 固定值一致，依赖保存在 Git 忽略的 `libs/` 中。
+
+PowerShell：
 
 ```powershell
 New-Item -ItemType Directory -Force libs | Out-Null
 $url = 'https://github.com/OpenYSM/OpenYSM/releases/download/ysm-2.6.5-forge%2Bmc1.20.1/ysm-2.6.5-forge%2Bmc1.20.1-all.jar'
 $file = 'libs/openysm-2.6.5-forge+mc1.20.1.jar'
-Invoke-WebRequest $url -Proxy 'http://<proxy-host>:<proxy-port>' -OutFile $file
+Invoke-WebRequest -Uri $url -OutFile $file
 $expected = '46eac038c314e7df1af80deea3c9e507f9f1e7ddf66b04eec455560dbfd51909'
-if ((Get-FileHash $file -Algorithm SHA256).Hash.ToLower() -ne $expected) {
+if ((Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
     throw 'OpenYSM checksum mismatch'
 }
-.\build.ps1 clean build
 ```
 
-Replace the example proxy with your system proxy; omit `-Proxy` only when direct
-access is intended. CI downloads and verifies this dependency automatically.
-
-## Windows
-
-`build.ps1` supports Windows PowerShell 5.1 and PowerShell 7.
-Default cache and temporary directories are `.gradle-home/` and `.tmp/`,
-ignored by Git. Existing environment overrides are respected.
-
-Proxy environment variables take precedence over the Windows system proxy.
-PAC requires an explicit `GRADLE_PROXY_URL`; SOCKS endpoints are not treated as
-HTTP proxies. Shell-sensitive credentials are rejected. Environment variables
-and the working directory are restored afterward.
-
-An explicit `JAVA_HOME` chooses the Gradle JVM. JDK 17 remains the compiler
-toolchain. On this host, system Java 21 can run Gradle while local Java 17 in
-`.jdks/` compiles the mod, avoiding a Java 17 loopback failure.
-
-## Linux / macOS
-
-Use JDK 17 and keep downloads on the project drive:
+Bash（Linux / macOS / Git Bash）：
 
 ```sh
-export GRADLE_USER_HOME="$PWD/.gradle-home"
-export TMPDIR="$PWD/.tmp"
-mkdir -p "$TMPDIR" libs
+mkdir -p libs
 curl --fail --location --retry 3 \
   'https://github.com/OpenYSM/OpenYSM/releases/download/ysm-2.6.5-forge%2Bmc1.20.1/ysm-2.6.5-forge%2Bmc1.20.1-all.jar' \
   -o libs/openysm-2.6.5-forge+mc1.20.1.jar
 echo '46eac038c314e7df1af80deea3c9e507f9f1e7ddf66b04eec455560dbfd51909  libs/openysm-2.6.5-forge+mc1.20.1.jar' | sha256sum --check
-bash ./gradlew --no-daemon clean build
 ```
 
-On macOS use `shasum -a 256 -c` instead of `sha256sum --check`.
-Java proxy settings go in `GRADLE_OPTS`: `http.proxyHost`, `http.proxyPort`,
-`https.proxyHost`, and `https.proxyPort`. Shell `HTTPS_PROXY` alone does not
-configure Java's dependency resolver.
+macOS 可将 `sha256sum --check` 替换为 `shasum -a 256 -c`。
+校验不通过时停止构建并重新检查下载来源。
 
-## IDE
+## 构建与单元测试 / Build and test
 
-Open the Gradle project and use its wrapper. Set **Gradle user home** to an
-absolute project-drive path such as `<project-directory>/.gradle-home`.
-IDE calls do not necessarily invoke `build.ps1` or `gradlew.bat`; wrapper defaults
-alone do not configure IDE caches.
-
-## Verification
-
-Use JDK 21 to run Gradle 8.14.3 / Loom 1.11.8, with a JDK 17 toolchain
-also available for both 1.20.1 targets. There is no Forge 1.21.1 target.
+Windows PowerShell 5.1 / 7：
 
 ```powershell
 .\build.ps1 clean build
 .\build.ps1 --project-dir fabric --project-prop target_mc=1.20.1 clean build
 .\build.ps1 --project-dir fabric --project-prop target_mc=1.21.1 clean build
-$env:PYTHONDONTWRITEBYTECODE = '1'
-$env:TEMP = "$PWD\.tmp"
-$env:TMP = $env:TEMP
-python -m unittest discover -s scripts -p 'test_*.py'
-python scripts/release.py validate v0.5.26
-python scripts/release.py prepare v0.5.26
 ```
 
-Python 3.11+ is required only for release tooling. Use the current project version
-instead of the example tag after a bump. Gradle reports:
-`build/reports/tests/test/index.html`; release-ready files: `build/release/`.
-Runtime validation still requires a compatible game instance and YSM models.
+Bash：
 
-Fabric reports are in `fabric/build/<version>/reports/tests/test/`.
-For the same YSM injection checks used in CI, download the official test-only
-binary using `bash scripts/download-ysm.sh fabric-1.20.1` (or `fabric-1.21.1`)
-with `HTTPS_PROXY` set to your system HTTP proxy. Then add
-`--project-prop ysm_smoke=true` to the Fabric build command. These checks load
-transformed YSM and vanilla classes without opening a game window; they do not
-test world rendering, death snapshots, model selection, or multiplayer behavior.
-Official YSM binaries stay in ignored `libs/compatibility/` and are never shipped.
+```sh
+bash ./gradlew --no-daemon clean build
+bash ./gradlew --no-daemon --project-dir fabric -Ptarget_mc=1.20.1 clean build
+bash ./gradlew --no-daemon --project-dir fabric -Ptarget_mc=1.21.1 clean build
+```
 
-Release tooling validates each platform with `prepare <tag> --target <target>`.
-CI collects each verified bundle separately; `assemble <tag>` requires all three
-under `build/bundles/<target>/` before writing the combined release directory.
+`build` 包含单元测试。测试报告位于各目标输出目录上一级的 `reports/tests/test/index.html`。
+安装测试使用 `*-all.jar`；普通 JAR 不包含完整运行依赖。
+正式发行附件由发布工作流添加 Minecraft 和加载器标识，见[发布流程](../RELEASING.md)。
+
+## Fabric Mixin 注入检查 / Injection checks
+
+CI 额外使用对应平台的官方 YSM 2.6.5 二进制验证 Mixin 注入。先在 Bash 中执行：
+
+```sh
+bash scripts/download-ysm.sh fabric-1.20.1
+bash scripts/download-ysm.sh fabric-1.21.1
+bash ./gradlew --no-daemon --project-dir fabric -Ptarget_mc=1.20.1 -Pysm_smoke=true clean build
+bash ./gradlew --no-daemon --project-dir fabric -Ptarget_mc=1.21.1 -Pysm_smoke=true clean build
+```
+
+下载文件仅用于兼容性测试，保存在忽略的 `libs/compatibility/`，不随本模组分发。
+注入检查不启动游戏，不能证明模型选择、世界渲染、死亡流程和多人游戏均正常。
+
+## 发布脚本检查 / Release tooling
+
+```sh
+python -m unittest discover -s scripts -p 'test_*.py'
+python scripts/release.py validate v0.5.26-beta.1
+```
+
+示例标签对应当前 `gradle.properties` 的 `mod_version`；修改版本后同步替换标签，
+并在 changelog 中添加对应章节。完整打包与发布步骤见[发布流程](../RELEASING.md)。
+
+## 网络、缓存与 IDE / Network, caches and IDE
+
+Windows 的 `build.ps1` 默认使用项目内 `.gradle-home/` 和 `.tmp/`，并保留调用前的环境。
+代理环境变量优先于系统代理；使用 PAC 时需明确设置 `GRADLE_PROXY_URL` 为实际 HTTP 代理地址。
+下载命令不会自动继承构建脚本的代理逻辑：按需为 `Invoke-WebRequest` 添加 `-Proxy`，
+或为 curl 配置 `HTTPS_PROXY`。不要将代理凭据提交到仓库。
+
+Linux / macOS 如需将缓存放在项目内，可在构建前设置 `GRADLE_USER_HOME="$PWD/.gradle-home"`。
+Java 的依赖下载需通过 `GRADLE_OPTS` 或本地 Gradle 配置设置 HTTP/HTTPS 代理；
+仅设置 `HTTPS_PROXY` 不保证 Java 使用该代理。
+
+IDE 分别导入根目录 Forge 工程和 `fabric/` 工程，选择 Wrapper 与 JDK 21 作为 Gradle JVM。
+IDE 不一定调用 `build.ps1`，请单独配置缓存、代理和 JDK 17 toolchain。
+不要提交 IDE 个人状态或本机绝对路径。
+
+## 游戏内验证 / In-game checks
+
+按改动范围检查模型加载、死亡生成、复活后的快照独立性、地形碰撞、牵引、爆炸、液体与世界切换。
+网络改动还需验证多人游戏及未安装模组的客户端加入。
+记录所用模型和平台；未执行的检查应明确标注，不能用编译成功代替游戏验收。
+
+## English quick start
+
+Install JDK 21 and 17, run Gradle on JDK 21, and make JDK 17 discoverable as a toolchain.
+Run all commands from the repository root. Download and verify the pinned OpenYSM dependency above,
+then use the PowerShell or Bash build commands for the three targets.
+
+Use `*-all.jar` from each target's output directory. Fabric injection checks additionally require the
+official test-only YSM binaries downloaded by `scripts/download-ysm.sh`. Python 3.11+ is required for
+release tooling. Build and injection checks do not replace in-game testing.
+
+For proxy configuration, `build.ps1` reads environment settings before the Windows system proxy.
+Dependency download commands and IDE builds may need separate configuration.
+See [Releasing](../RELEASING.md) for tags, package verification and release drafts.
