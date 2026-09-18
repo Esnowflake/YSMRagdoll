@@ -1,5 +1,22 @@
 # 构建与回退
 
+## 当前本地修订：0.5.25 柔性牵引线
+
+开发分支：`fix/flexible-traction-beam`；回退标签：`baseline-before-flexible-beam-0.5.25`。
+仅修改蓝线显示：玩家端向木棍附近延伸，布娃娃端呈现平滑拖尾；物理参数不变。
+本轮未上传 GitHub，也未替换已发布 Release 的附件。
+
+退出游戏后，用以下备份替换 mods 中同名安装包即可回退：
+
+`E:\YSM Ragdoll\backups\ysmragdoll-before-flexible-beam\ysmragdoll-0.5.25-all.jar`
+
+源码回退：保存未提交改动后，执行
+`git switch -c rollback-flexible-beam baseline-before-flexible-beam-0.5.25`。
+恢复本轮源码：`git switch fix/flexible-traction-beam`。
+Git 历史备份：`E:\YSM Ragdoll\YSMRagdoll-before-flexible-beam.bundle`。
+新版产物仍为 `build/libs/ysmragdoll-0.5.25-all.jar`。
+需游戏内检查不同 FOV、左右手、快速转头与静止时的线条效果；木棍端使用视角空间偏移近似定位。
+
 ## 当前修订：0.5.25 牵引模式与惯性反馈
 
 开发分支：`feature/traction-inertia`；版本号保持 `0.5.25`。

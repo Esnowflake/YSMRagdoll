@@ -21,6 +21,9 @@ public final class GravityGunController {
     private static PhysicsGrab grab;
     private static double distance;
     private static boolean pressHandled;
+    private static final TractionBeam beam = new TractionBeam();
+    private static Vec3 beamTarget;
+    private static long lastBeamNanos;
 
     private GravityGunController() {}
 
@@ -44,6 +47,9 @@ public final class GravityGunController {
         if (grab != null) {
             Vector3f anchor = grab.anchor();
             distance = clampDistance(eye.distanceTo(new Vec3(anchor.x, anchor.y, anchor.z)));
+            beam.reset();
+            beamTarget = new Vec3(anchor.x, anchor.y, anchor.z);
+            lastBeamNanos = 0;
         }
     }
 
@@ -65,6 +71,7 @@ public final class GravityGunController {
         Player player = mc.player;
         Vec3 eye = player.getEyePosition(partialTick);
         Vec3 anchor = clippedTarget(player, eye, player.getViewVector(partialTick), distance);
+        beamTarget = anchor;
         grab.moveTo(new Vector3f((float) anchor.x, (float) anchor.y, (float) anchor.z));
     }
 
@@ -90,30 +97,55 @@ public final class GravityGunController {
 
     public static void release() {
         if (grab != null) { grab.close(); grab = null; }
+        beam.reset();
+        beamTarget = null;
+        lastBeamNanos = 0;
     }
 
     static void render(PoseStack stack, Vec3 camera, float partialTick, MultiBufferSource buffers) {
         if (grab == null || !grab.isActive()) return;
-        Player player = Minecraft.getInstance().player;
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
         if (player == null) return;
         Vec3 direction = player.getViewVector(partialTick);
-        Vec3 right = direction.cross(new Vec3(0, 1, 0)).normalize();
+        // Yaw keeps the hand offset stable even when looking straight up or down.
+        double yaw = Math.toRadians(player.getViewYRot(partialTick));
+        Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+        Vec3 up = right.cross(direction).normalize();
         double hand = player.getMainArm() == HumanoidArm.RIGHT ? 1 : -1;
-        Vec3 from = player.getEyePosition(partialTick).add(direction.scale(0.35))
-                .add(right.scale(hand * 0.22)).add(0, -0.20, 0).subtract(camera);
+        boolean firstPerson = mc.options.getCameraType().isFirstPerson();
+        Vec3 from = (firstPerson ? camera : player.getEyePosition(partialTick))
+                .add(direction.scale(firstPerson ? 0.30 : 0.35))
+                .add(right.scale(hand * (firstPerson ? 0.40 : 0.22)))
+                .add(up.scale(firstPerson ? -0.27 : -0.20));
         Vector3f anchor = grab.anchor();
-        Vec3 to = new Vec3(anchor.x, anchor.y, anchor.z).add(
+        Vec3 renderOffset = new Vec3(
                 YsmRagdollConfig.RENDER_OFFSET_X.get(), YsmRagdollConfig.RENDER_OFFSET_Y.get(),
-                YsmRagdollConfig.RENDER_OFFSET_Z.get()).subtract(camera);
-        Vec3 normal = to.subtract(from).normalize();
-        if (normal.lengthSqr() < 1.0E-8) return;
+                YsmRagdollConfig.RENDER_OFFSET_Z.get());
+        Vec3 to = new Vec3(anchor.x, anchor.y, anchor.z).add(renderOffset);
+        long now = System.nanoTime();
+        double seconds = lastBeamNanos == 0 ? 0 : (now - lastBeamNanos) * 1.0E-9;
+        lastBeamNanos = now;
+        Vec3 bend = beam.update(beamTarget == null ? to : beamTarget.add(renderOffset), to, seconds);
+        from = from.subtract(camera);
+        to = to.subtract(camera);
         var consumer = buffers.getBuffer(RenderType.lines());
         var pose = stack.last();
-        consumer.vertex(pose.pose(), (float) from.x, (float) from.y, (float) from.z)
-                .color(0.2F, 0.65F, 1.0F, 0.95F)
-                .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z).endVertex();
-        consumer.vertex(pose.pose(), (float) to.x, (float) to.y, (float) to.z)
-                .color(0.4F, 0.85F, 1.0F, 0.95F)
-                .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z).endVertex();
+        Vec3 previous = from;
+        for (int i = 1; i <= 24; i++) {
+            double t = i / 24.0;
+            Vec3 next = TractionBeam.point(from, to, bend, t);
+            Vec3 normal = next.subtract(previous).normalize();
+            if (normal.lengthSqr() > 1.0E-8) {
+                float before = (i - 1) / 24F;
+                consumer.vertex(pose.pose(), (float) previous.x, (float) previous.y, (float) previous.z)
+                        .color(0.2F + 0.2F * before, 0.65F + 0.2F * before, 1.0F, 0.95F)
+                        .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z).endVertex();
+                consumer.vertex(pose.pose(), (float) next.x, (float) next.y, (float) next.z)
+                        .color(0.2F + 0.2F * (float) t, 0.65F + 0.2F * (float) t, 1.0F, 0.95F)
+                        .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z).endVertex();
+            }
+            previous = next;
+        }
     }
 }
