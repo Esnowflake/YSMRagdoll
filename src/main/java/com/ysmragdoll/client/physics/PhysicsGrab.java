@@ -50,14 +50,16 @@ public final class PhysicsGrab implements AutoCloseable {
         transform.inverse();
         localAnchor = new Vector3f(hit);
         transform.transform(localAnchor);
-        constraint = new Point2PointConstraint(body, localAnchor);
+        constraint = jointGuard != null && this.strength > 0 && this.strength < 100
+                ? new BoundedTractionConstraint(body, localAnchor, jointGuard.mass(body), this.strength)
+                : new Point2PointConstraint(body, localAnchor);
         constraint.setting.tau = 0.15F;
         constraint.setting.damping = 1.0F;
         constraint.setting.impulseClamp = 8.0F;
         constraint.setPivotB(hit);
         requestedPoint.set(hit);
         requestedPoint.sub(offset.get());
-        constraintInstalled = this.strength > 0 && (jointGuard == null || this.strength == 100);
+        constraintInstalled = this.strength > 0;
         if (constraintInstalled) add.accept(constraint);
         body.activate(true);
     }
@@ -87,8 +89,11 @@ public final class PhysicsGrab implements AutoCloseable {
         delta.add(offset.get());
         delta.sub(current);
         if (strength < 100) {
-            // No target teleport or hidden point-constraint motor in soft mode.
-            if (error < STRAIN_LIMIT) jointGuard.pull(body, delta, strength);
+            // Only the attachment receives external traction; the joints transmit it to the limbs.
+            BoundedTractionConstraint spring = (BoundedTractionConstraint) constraint;
+            current.add(delta);
+            spring.setPivotB(current);
+            spring.setPulling(error < STRAIN_LIMIT && jointGuard.preparePull(body, delta, strength));
             return;
         }
         Vector3f movement = error < STRAIN_LIMIT ? jointGuard.follow(body, delta, true) : new Vector3f();

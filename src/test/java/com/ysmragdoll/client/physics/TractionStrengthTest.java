@@ -35,10 +35,48 @@ public class TractionStrengthTest {
             f.grab.moveTo(new Vector3f(100, 100, 100));
             f.grab.beforeStep();
             assertTrue("Soft pulling must not teleport the anchor", before.epsilonEquals(f.grab.anchor(), 0));
+            f.world.stepSimulation(STEP, 0, STEP);
             Vector3f momentum = new Vector3f();
             for (RigidBody part : f.parts) momentum.scaleAdd(1 / part.getInvMass(), part.getLinearVelocity(new Vector3f()), momentum);
+            momentum.y += f.guard.mass(f.parts.get(0)) * 9.81F * STEP;
             assertTrue(momentum.length() <= TractionForce.maximum(strength) * STEP + 0.0001F);
-            assertEquals("No hidden unlimited point motor", 6, f.world.getNumConstraints());
+            assertTrue("The bounded attachment actually pulls", momentum.length() > 0);
+            assertEquals("One bounded point motor", 7, f.world.getNumConstraints());
+        }
+    }
+
+    @Test
+    public void hangingByOnePointLetsLimbsSagAndBendWithoutChangingBodyDamping() {
+        for (int strength : new int[]{35, 70, 99, 100}) assertArticulatedHang(strength);
+    }
+
+    private void assertArticulatedHang(int strength) {
+        Fixture f = new Fixture(strength, true);
+        Vector3f target = f.grab.anchor();
+        float initialTip = f.parts.get(6).getWorldTransform(new Transform()).origin.y;
+        float lowestTip = initialTip;
+        float largestBend = 0;
+        for (int i = 0; i < 240; i++) {
+            f.step(target);
+            lowestTip = Math.min(lowestTip, f.parts.get(6).getWorldTransform(new Transform()).origin.y);
+            Vector3f pickedAxis = new Vector3f(0, 1, 0);
+            Vector3f freeAxis = new Vector3f(pickedAxis);
+            f.parts.get(0).getWorldTransform(new Transform()).basis.transform(pickedAxis);
+            f.parts.get(3).getWorldTransform(new Transform()).basis.transform(freeAxis);
+            pickedAxis.sub(freeAxis);
+            largestBend = Math.max(largestBend, pickedAxis.length());
+            assertTrue("Suspended joints must stay connected", f.guard.maximumError() < 0.02F);
+            for (RigidBody part : f.parts) {
+                assertEquals(0.04F, part.getLinearDamping(), 0);
+                assertEquals(0.18F, part.getAngularDamping(), 0);
+            }
+        }
+        assertTrue("Free limbs must sag during the swing", lowestTip < initialTip - 0.5F);
+        assertTrue("The assembly must articulate, not just translate/rotate as one rigid shape", largestBend > 0.15F);
+        f.grab.close();
+        for (RigidBody part : f.parts) {
+            assertEquals(0.04F, part.getLinearDamping(), 0);
+            assertEquals(0.18F, part.getAngularDamping(), 0);
         }
     }
 
@@ -54,7 +92,8 @@ public class TractionStrengthTest {
             float maxGap = 0;
             for (int i = 0; i < 900; i++) {
                 f.step(new Vector3f(i / 90 % 2 == 0 ? 8 : -8, 7, i / 60 % 2 == 0 ? 3 : -3));
-                maxGap = Math.max(maxGap, f.guard.maximumError());
+                float gap = f.guard.maximumError();
+                maxGap = Math.max(maxGap, gap);
             }
             System.out.println("Strength=" + strength + " max joint gap=" + maxGap);
             assertTrue("No visible joint separation", maxGap < 0.02F);
@@ -111,6 +150,9 @@ public class TractionStrengthTest {
         final GrabJointGuard guard;
         final PhysicsGrab grab;
         Fixture(int strength) {
+            this(strength, false);
+        }
+        Fixture(int strength, boolean horizontal) {
             var config = new DefaultCollisionConfiguration();
             world = new DiscreteDynamicsWorld(new CollisionDispatcher(config), new DbvtBroadphase(),
                     new SequentialImpulseConstraintSolver(), config);
@@ -121,7 +163,13 @@ public class TractionStrengthTest {
                 float mass = i == 3 ? 5 : 0.35F;
                 var shape = new BoxShape(new Vector3f(0.1F, 0.25F, 0.1F));
                 Vector3f inertia = new Vector3f(); shape.calculateLocalInertia(mass, inertia);
-                var body = new RigidBody(new RigidBodyConstructionInfo(mass, new DefaultMotionState(pose(5 - i * 0.5F)), shape, inertia));
+                Transform initial = pose(5 - i * 0.5F);
+                if (horizontal) {
+                    initial.basis.rotZ((float) (Math.PI / 2));
+                    initial.origin.set(i * 0.5F, 5, 0);
+                }
+                var body = new RigidBody(new RigidBodyConstructionInfo(mass, new DefaultMotionState(initial), shape, inertia));
+                if (horizontal) body.setDamping(0.04F, 0.18F);
                 body.setCcdMotionThreshold(0.025F);
                 body.setCcdSweptSphereRadius(0.08F);
                 world.addRigidBody(body, (short) 2, (short) 1);
@@ -133,7 +181,7 @@ public class TractionStrengthTest {
                 world.addConstraint(joint, true); joints.add(joint);
             }
             guard = new GrabJointGuard(world, joints);
-            grab = new PhysicsGrab(parts.get(0), new Vector3f(0, 5.2F, 0), world::addConstraint,
+            grab = new PhysicsGrab(parts.get(0), horizontal ? new Vector3f(-0.2F, 5, 0) : new Vector3f(0, 5.2F, 0), world::addConstraint,
                     world::removeConstraint, () -> true, Vector3f::new, guard, strength);
         }
         void step(Vector3f target) {

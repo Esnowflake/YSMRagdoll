@@ -1,6 +1,17 @@
 # 构建与回退
 
-## 当前本地修订：0.5.25 牵引线力矩
+## 当前本地修订：0.5.25 抓取点牵引与柔软关节
+
+分支：`fix/articulated-traction`；回退标签：`baseline-before-articulated-traction-0.5.25`。
+将软牵引从整具均匀受力改为有限拉力的抓取点约束，恢复四肢下垂和关节自然摆动；
+布娃娃自身阻尼保持不变。保留 0–100 力矩、青绿色曲线、碰撞及防脱节修正。
+
+退出游戏后，用以下安装包替换同名 JAR 即可回退到修改前：
+`E:\YSM Ragdoll\backups\ysmragdoll-before-articulated-traction\ysmragdoll-0.5.25-all.jar`。
+源码回退：保存未提交修改后，执行 `git switch feature/traction-strength`。
+恢复本轮：`git switch fix/articulated-traction`。版本号保持 0.5.25，未更新 GitHub Release。
+
+## 上一轮本地修订：0.5.25 牵引线力矩
 
 分支：`feature/traction-strength`；回退标签：`baseline-before-traction-strength-0.5.25`。
 新增 0–100 的实际牵引力度设置，默认 70；0 不牵引，1–99 有限力软牵引，100 刚性跟随且线条笔直。

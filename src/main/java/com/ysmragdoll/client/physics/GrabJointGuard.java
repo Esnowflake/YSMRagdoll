@@ -15,7 +15,9 @@ import java.util.function.BiPredicate;
 /** Grab-only positional correction of joint anchors; never changes joint angles or body rotations. */
 final class GrabJointGuard {
     private static final float TOLERANCE = 0.001F;
-    private static final int MAX_PASSES = 32;
+    // Light picked limbs need more convergence than uniform group acceleration.
+    // Stop as soon as no correction is needed; this is a ceiling, not a fixed cost.
+    private static final int MAX_PASSES = 128;
     private static final float MAX_CORRECTION = 0.04F;
     // Fixed 120 Hz substeps: catch up quickly without injecting large velocities into a light limb.
     private static final float FOLLOW_FRACTION = 0.65F;
@@ -64,32 +66,28 @@ final class GrabJointGuard {
         return movement;
     }
 
-    void pull(RigidBody grabbed, Vector3f error, int strength) {
+    float mass(RigidBody grabbed) {
         List<RigidBody> assembly = bodies.isEmpty() ? List.of(grabbed) : bodies;
         float mass = 0;
-        Vector3f velocity = new Vector3f();
         for (RigidBody part : assembly) {
-            if (part.getInvMass() <= 0) continue;
-            float partMass = 1 / part.getInvMass();
-            velocity.scaleAdd(partMass, part.getLinearVelocity(new Vector3f()), velocity);
-            mass += partMass;
+            if (part.getInvMass() > 0) mass += 1 / part.getInvMass();
         }
-        if (mass <= 0) return;
-        velocity.scale(1 / mass);
-        Vector3f force = TractionForce.calculate(error, velocity, mass, strength);
-        Vector3f travel = new Vector3f(velocity);
-        travel.scale(1F / 120);
-        travel.scaleAdd(1F / (mass * 120 * 120), force, travel);
-        if (!prepareSweep.test(assembly, travel)) return;
-        // Distribute one bounded external force by mass. A tiny hand must not receive the
-        // entire assembly's pulling impulse; existing rotations and joint freedom remain intact.
+        return mass;
+    }
+
+    boolean preparePull(RigidBody grabbed, Vector3f error, int strength) {
+        List<RigidBody> assembly = bodies.isEmpty() ? List.of(grabbed) : bodies;
+        // Cache the picked body's possible sweep before its bounded point motor runs.
+        Vector3f travel = new Vector3f(error);
+        float distance = travel.length();
+        float maximum = TractionForce.maximum(strength) * grabbed.getInvMass() / (120 * 120);
+        if (distance > maximum) travel.scale(maximum / distance);
+        travel.scaleAdd(1F / 120, grabbed.getLinearVelocity(new Vector3f()), travel);
+        if (!prepareSweep.test(assembly, travel)) return false;
         for (RigidBody part : assembly) {
-            if (part.getInvMass() <= 0) continue;
-            Vector3f impulse = new Vector3f(force);
-            impulse.scale(1 / (part.getInvMass() * mass * 120));
-            part.applyCentralImpulse(impulse);
             part.activate(true);
         }
+        return true;
     }
 
     void applyInertia(RigidBody grabbed, Vector3f velocityChange) {
@@ -205,8 +203,14 @@ final class GrabJointGuard {
     private float safeFraction(RigidBody body, Vector3f movement) {
         if (body.getInvMass() == 0 || !(body.getCollisionShape() instanceof ConvexShape shape)) return 0;
         Transform from = body.getWorldTransform(new Transform());
+        float distance = movement.length();
+        // Very short casts can miss the contact tolerance in JBullet. Probe farther,
+        // then convert the hit distance back to this correction's actual length.
+        float probeDistance = Math.max(0.25F, distance);
+        Vector3f probe = new Vector3f(movement);
+        probe.scale(probeDistance / distance);
         Transform to = new Transform(from);
-        to.origin.add(movement);
+        to.origin.add(probe);
         var hit = new CollisionWorld.ClosestConvexResultCallback(from.origin, to.origin) {
             @Override
             public float addSingleResult(CollisionWorld.LocalConvexResult result, boolean worldNormal) {
@@ -219,7 +223,8 @@ final class GrabJointGuard {
         hit.collisionFilterGroup = 2;
         hit.collisionFilterMask = 1;
         world.convexSweepTest(shape, from, to, hit);
-        return hit.hasHit() ? Math.max(0, hit.closestHitFraction - TOLERANCE / movement.length()) : 1;
+        return hit.hasHit() ? Math.max(0, Math.min(1,
+                (hit.closestHitFraction * probeDistance - TOLERANCE) / distance)) : 1;
     }
 
     private void translate(RigidBody body, Vector3f movement) {
